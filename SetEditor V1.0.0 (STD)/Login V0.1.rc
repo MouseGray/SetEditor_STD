@@ -1,0 +1,183 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Русский (Россия) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_FORMVIEW DIALOGEX 0, 0, 171, 112
+STYLE DS_SETFONT | DS_SETFOREGROUND | DS_CENTER | WS_POPUP | WS_THICKFRAME
+EXSTYLE WS_EX_APPWINDOW
+FONT 10, "Arial Narrow", 700, 0, 0xCC
+BEGIN
+    EDITTEXT        IDC_EDIT1,15,16,140,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT2,15,46,140,14,ES_PASSWORD | ES_AUTOHSCROLL
+    LTEXT           "Логин",IDC_STATIC,15,6,30,8
+    LTEXT           "Пароль",IDC_STATIC,15,36,30,8
+    PUSHBUTTON      "Принять",IDOK,52,94,50,14
+    PUSHBUTTON      "Закрыть",IDCLOSE,120,94,50,14
+    LTEXT           "Введите данные ...",IDC_STATIC1,14,72,156,8
+END
+
+IDD_DIALOG1 DIALOGEX 0, 0, 186, 75
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    EDITTEXT        IDC_NUMEDIT,23,31,141,14,ES_CENTER | ES_NUMBER
+    PUSHBUTTON      "Принять",IDOK,64,54,50,14
+    LTEXT           "Введите номер строки:",IDC_STATIC,25,16,80,8
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_FORMVIEW, DIALOG
+    BEGIN
+        RIGHTMARGIN, 170
+        BOTTOMMARGIN, 101
+    END
+
+    IDD_DIALOG1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 68
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_FORMVIEW AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG1 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_CLOSE               BITMAP                  "bm\\Close.bmp"
+
+IDB_CHECK               BITMAP                  "bm\\Check.bmp"
+
+IDB_DMARKER_1           BITMAP                  "bm\\DMarker_1.bmp"
+
+IDB_DMARKER_2           BITMAP                  "bm\\DMarker_2.bmp"
+
+IDB_DMARKER_3           BITMAP                  "bm\\DMarker_3.bmp"
+
+IDB_DMARKER_4           BITMAP                  "bm\\DMarker_4.bmp"
+
+IDB_DMARKER_5           BITMAP                  "bm\\DMarker_5.bmp"
+
+IDB_KEYPAD              BITMAP                  "bm\\Keypad.bmp"
+
+IDB_LMARKER_1           BITMAP                  "bm\\LMarker_1.bmp"
+
+IDB_LMARKER_2           BITMAP                  "bm\\LMarker_2.bmp"
+
+IDB_LMARKER_3           BITMAP                  "bm\\LMarker_3.bmp"
+
+IDB_LMARKER_4           BITMAP                  "bm\\LMarker_4.bmp"
+
+IDB_LMARKER_5           BITMAP                  "bm\\LMarker_5.bmp"
+
+IDB_MAXIMAZE            BITMAP                  "bm\\Maximaze.bmp"
+
+IDB_MINIMAZE            BITMAP                  "bm\\Minimaze.bmp"
+
+IDB_SETTING             BITMAP                  "bm\\Setting.bmp"
+
+IDB_STATE               BITMAP                  "bm\\State.bmp"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_STRING105           "7788"
+END
+
+#endif    // Русский (Россия) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
