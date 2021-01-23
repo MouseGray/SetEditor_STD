@@ -2,11 +2,12 @@
 
 #include <Windows.h>
 
-#include <string>
-#include <vector>
+
 #include <stack>
 #include <deque>
 #include <fstream>
+
+#include "ETextComponent.h"
 
 #include "CheckSyntax.h"
 #include "LineNum.h"
@@ -108,7 +109,7 @@ private:
 	vector<Segment> segments;
 };
 
-class CEdit
+class CEdit : public ETextComponent
 {
 public:
 	// Команды окна
@@ -193,7 +194,6 @@ public:
 	void Load(string fileName);
 	void Save(string fileName);
 
-	string text;
 	vector<int> codes;
 	vector<Segment> segments;
 	void (*SegmentEditCallback)(Segment*, int, int) = nullptr;

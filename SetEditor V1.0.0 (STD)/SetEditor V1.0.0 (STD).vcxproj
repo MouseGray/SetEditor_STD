@@ -83,6 +83,7 @@
       <Optimization>Disabled</Optimization>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -108,6 +109,7 @@
       <Optimization>Disabled</Optimization>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -130,6 +132,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Program Files %28x86%29\MySQL\MySQL Server 5.7\include;C:\Program Files %28x86%29\MySQL\Connector C++ 8.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
+      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -150,6 +153,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Program Files %28x86%29\MySQL\MySQL Server 5.7\include;C:\Program Files %28x86%29\MySQL\Connector C++ 8.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
+      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -173,6 +177,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="DATLib.cpp" />
+    <ClCompile Include="ERedoUndoComponent.cpp" />
+    <ClCompile Include="ERedoUndoUnit.cpp" />
+    <ClCompile Include="ETextComponent.cpp" />
     <ClCompile Include="Keypad.cpp" />
     <ClCompile Include="LineNum.cpp" />
     <ClCompile Include="Login.cpp" />
@@ -194,6 +201,9 @@
     <ClInclude Include="Controls.h" />
     <ClInclude Include="CTable.h" />
     <ClInclude Include="DATLib.h" />
+    <ClInclude Include="ERedoUndoComponent.h" />
+    <ClInclude Include="ERedoUndoUnit.h" />
+    <ClInclude Include="ETextComponent.h" />
     <ClInclude Include="Header.h" />
     <ClInclude Include="DATerm.h" />
     <ClInclude Include="LineNum.h" />

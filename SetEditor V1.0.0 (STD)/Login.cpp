@@ -1488,7 +1488,7 @@ void MainBridge(CEdit* edit)
 	vector<Vec> sets = CreateSets(MainUserInfo.GetCurrentTask()->SetNames, &system_size);
 
 	CTable table;
-	table.CreateTable(edit->text, edit->codes, edit->segments);
+	table.CreateTable(edit->m_buffer, edit->codes, edit->segments);
 	table.SetConnections();
 
 	vector<string> tempPartsOfText;
