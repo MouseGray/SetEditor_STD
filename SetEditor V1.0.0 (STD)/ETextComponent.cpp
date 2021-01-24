@@ -1,6 +1,6 @@
 #include "ETextComponent.h"
 
-void ETextComponent::erase(size_t begin, size_t end, ERedoUndoComponent::Type redoUndoType)
+void ETextComponent::erase(size_t end, ERedoUndoComponent::Type redoUndoType)
 {
 	switch (redoUndoType)
 	{
@@ -13,10 +13,10 @@ void ETextComponent::erase(size_t begin, size_t end, ERedoUndoComponent::Type re
 	}
 
 	if (begin == end) return;
-	m_buffer.erase(m_buffer.begin() + begin, m_buffer.end() + end);
+	m_buffer.erase(m_buffer.begin() + begin, m_buffer.begin() + end);
 }
 
-void ETextComponent::insert(size_t offset, std::string text, ERedoUndoComponent::Type redoUndoType)
+void ETextComponent::insert(std::string text, ERedoUndoComponent::Type redoUndoType)
 {
 	toCorrectText(text);
 

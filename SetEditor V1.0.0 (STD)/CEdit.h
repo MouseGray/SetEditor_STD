@@ -162,7 +162,6 @@ public:
 	int GetCaretHeight();
 	void UpdateScroll();
 	void UpdateOverline();
-	void UpdateMarkers();
 
 	void PrepareText(string* text, vector<int>* codes);
 	int GetRemoveTextOverline(const string& text);
@@ -174,8 +173,6 @@ public:
 
 	inline void SetMarker(int id, int* code);
 
-	void RemoveLeftMarker(int id, int pos_U);
-	void RemoveRightMarker(int id, int pos_U);
 	// Команды преобразования
 	int GetCharWidthU(char c);
 	bool GetUFromP(int* pos_U, const int posX_P, const int posY_P);
@@ -194,7 +191,6 @@ public:
 	void Load(string fileName);
 	void Save(string fileName);
 
-	vector<int> codes;
 	vector<Segment> segments;
 	void (*SegmentEditCallback)(Segment*, int, int) = nullptr;
 	void (*ShowTipCallback)(HWND, int, int, int, Segment*) = nullptr;

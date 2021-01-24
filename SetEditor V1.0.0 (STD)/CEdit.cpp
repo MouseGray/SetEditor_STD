@@ -83,7 +83,6 @@ void CEdit::W_RButtonDown(int x, int y)
 		case 1: 
 			line = GetLinePos(min(caretPos_U, selectPos_U));
 			if (line == -1) break;
-			codes[line] = 0;
 			Update();
 			break;
 		case 2:
@@ -91,7 +90,6 @@ void CEdit::W_RButtonDown(int x, int y)
 			if (line == -1) break;
 			res = DialogBoxParam(nullptr, MAKEINTRESOURCE(IDD_DIALOG1), hWnd, LineNumProc, NULL);
 			if (res == -1) break;
-			codes[line] = res;
 			Update();
 			break;
 		case 3:
@@ -128,13 +126,13 @@ void CEdit::W_MouseMove(int x, int y, bool shift)
 				endSelectPos = GetRightSelectU(tempCaretPos_U);
 				POINT point = { x, y };
 				ClientToScreen(hWnd, &point);
-				ShowTipCallback(hWnd, point.x, point.y, GetError(codes[tempCaretPos_U]), &segments[GetSegmentPos(tempCaretPos_U)]);
+				ShowTipCallback(hWnd, point.x, point.y, 0, &segments[GetSegmentPos(tempCaretPos_U)]);
 				Update();
 			}
 			else {
 				POINT point = { x, y };
 				ClientToScreen(hWnd, &point);
-				ShowTipCallback(hWnd, point.x, point.y, GetError(codes[tempCaretPos_U]), nullptr);
+				ShowTipCallback(hWnd, point.x, point.y, 0, nullptr);
 				if (startSelectPos != endSelectPos) {
 					startSelectPos = endSelectPos = 0;
 					Update();
@@ -164,7 +162,7 @@ void CEdit::W_MouseWheel(int delta)
 	{
 		curCharWidth_P = GetCharWidthU(m_buffer[curPos_U]) * charWidth_P;
 
-		if (curPosX_P + curCharWidth_P > textWidth_P || m_buffer[curPos_U] == '\r') {
+		if (curPosX_P + curCharWidth_P > textWidth_P || m_buffer[curPos_U] == '\n') {
 			curPosX_P = 0;
 			curPosY_U++;
 		}
@@ -217,6 +215,7 @@ void CEdit::W_Char(char c)
 {
 	if (!IsCorrectChar(c)) return;
 	EraseSelect();
+	if (c == '\r') c = '\n';
 	string character;
 	character += toupper(c);
 	Insert(caretPos_U, character, vector<int>(1, 0));
@@ -356,7 +355,6 @@ void CEdit::Erase(size_t off, size_t count)
 	for (; overline > 0; overline--) {
 		_Insert(off, "}", vector<int>(1, 0));
 	}
-	UpdateMarkers();
 	UpdateOverline();
 	UpdateScroll();
 }
@@ -387,7 +385,6 @@ int CEdit::Insert(size_t off, const string& text, const vector<int>& codes)
 	vector<int> pasteCode = codes;
 	PrepareText(&paste, &pasteCode);
 	_Insert(off, paste, pasteCode);
-	UpdateMarkers();
 	UpdateOverline();
 	UpdateScroll();
 	return paste.size();
@@ -541,14 +538,14 @@ bool CEdit::ToNext()
 void CEdit::ToBack()
 {
 	releaseUndo();
-	/*if (undo.empty()) return;
-	while (!undo.back().empty())
+	// if (undo.empty()) return;
+	/*while (!undo.back().empty())
 	{
 		undo.back().top().Release(&m_buffer, &codes, &caretPos_U, &selectPos_U, &segments);
 		undo.back().pop();
-	}
+	}*/
 
-	undo.pop_back();*/
+	undo.pop_back();
 
 	UpdateScroll();
 	SetCaretPosition();
@@ -584,9 +581,6 @@ void CEdit::SetOverline()
 	text.insert(text.begin(), this->m_buffer.begin() + min(caretPos_U, selectPos_U), this->m_buffer.begin() + max(caretPos_U, selectPos_U));
 	text.insert(text.begin(), '{');
 	text.insert(text.end(), '}');
-	codes.insert(codes.begin(), this->codes.begin() + min(caretPos_U, selectPos_U), this->codes.begin() + max(caretPos_U, selectPos_U));
-	codes.insert(codes.begin(), 0);
-	codes.insert(codes.end(), 0);
 	AddUndo();
 	undo.back().push(CAction());
 	_Erase(min(caretPos_U, selectPos_U), max(caretPos_U, selectPos_U) - min(caretPos_U, selectPos_U));
@@ -600,14 +594,6 @@ void CEdit::Mark(int id)
 {
 	if (caretPos_U == selectPos_U) return;
 
-	for (size_t i = min(caretPos_U, selectPos_U); i < max(caretPos_U, selectPos_U); i++) {
-		if (m_buffer[i] == '=' || m_buffer[i] == '\r') continue;
-		SetMarker(id, &codes[i]);
-	}
-
-	RemoveLeftMarker(id, min(caretPos_U, selectPos_U));
-	RemoveRightMarker(id, max(caretPos_U, selectPos_U));
-
 	caretPos_U = selectPos_U = min(caretPos_U, selectPos_U);
 	SetCaretPosition();
 	Update();
@@ -615,8 +601,8 @@ void CEdit::Mark(int id)
 
 bool CEdit::Check()
 {
-	CheckSyntax cs(&m_buffer, &codes);
-	return cs.MarkErrors();
+	//CheckSyntax cs(&m_buffer, &codes);
+	return true;//cs.MarkErrors();
 }
 
 void CEdit::SetCaretPosition(bool off)
@@ -658,7 +644,7 @@ void CEdit::UpdateScroll()
 	{
 		curCharWidth_P = GetCharWidthU(m_buffer[curPos_U]) * charWidth_P;
 
-		if (curPosX_P + curCharWidth_P > textWidth_P || m_buffer[curPos_U] == '\r') {
+		if (curPosX_P + curCharWidth_P > textWidth_P || m_buffer[curPos_U] == '\n') {
 			curPosX_P = 0;
 			curPosY_U++;
 		}
@@ -697,89 +683,6 @@ void CEdit::UpdateOverline()
 	}
 	for (; overline > 0; overline--) {
 		_Insert(m_buffer.size(), "}", vector<int>(1, 0));
-	}
-}
-
-void CEdit::UpdateMarkers()
-{
-	char lmarker_1 = 0;
-	char lmarker_2 = 0;
-	char lmarker_3 = 0;
-	char lmarker_4 = 0;
-	char lmarker_5 = 0;
-
-	char dmarker_1 = 0;
-	char dmarker_2 = 0;
-	char dmarker_3 = 0;
-	char dmarker_4 = 0;
-	char dmarker_5 = 0;
-	for (size_t i = 0; i < codes.size(); i++)
-	{
-		if (m_buffer[i] == '=' || m_buffer[i] == '\r') {
-			lmarker_1 = 0;
-			lmarker_2 = 0;
-			lmarker_3 = 0;
-			lmarker_4 = 0;
-			lmarker_5 = 0;
-
-			dmarker_1 = 0;
-			dmarker_2 = 0;
-			dmarker_3 = 0;
-			dmarker_4 = 0;
-			dmarker_5 = 0;
-			continue;
-		}
-		if (codes[i] & LMARKER_1) {
-			if (lmarker_1 == 0) lmarker_1 = 1;
-			else if (lmarker_1 != 1) codes[i] &= ~LMARKER_1;
-		}
-		else if (lmarker_1 == 1) lmarker_1 = 2;
-		if (codes[i] & LMARKER_2) {
-			if (lmarker_2 == 0) lmarker_2 = 1;
-			else if (lmarker_2 != 1) codes[i] &= ~LMARKER_2;
-		}
-		else if (lmarker_2 == 1) lmarker_2 = 2;
-		if (codes[i] & LMARKER_3) {
-			if (lmarker_3 == 0) lmarker_3 = 1;
-			else if (lmarker_3 != 1) codes[i] &= ~LMARKER_3;
-		}
-		else if (lmarker_3 == 1) lmarker_3 = 2;
-		if (codes[i] & LMARKER_4) {
-			if (lmarker_4 == 0) lmarker_4 = 1;
-			else if (lmarker_4 != 1) codes[i] &= ~LMARKER_4;
-		}
-		else if (lmarker_4 == 1) lmarker_4 = 2;
-		if (codes[i] & LMARKER_5) {
-			if (lmarker_5 == 0) lmarker_5 = 1;
-			else if (lmarker_5 != 1) codes[i] &= ~LMARKER_5;
-		}
-		else if (lmarker_5 == 1) lmarker_5 = 2;
-
-		if (codes[i] & DMARKER_1) {
-			if (dmarker_1 == 0) dmarker_1 = 1;
-			else if (dmarker_1 != 1) codes[i] &= ~DMARKER_1;
-		}
-		else if (dmarker_1 == 1) dmarker_1 = 2;
-		if (codes[i] & DMARKER_2) {
-			if (dmarker_2 == 0) dmarker_2 = 1;
-			else if (dmarker_2 != 1) codes[i] &= ~DMARKER_2;
-		}
-		else if (dmarker_2 == 1) dmarker_2 = 2;
-		if (codes[i] & DMARKER_3) {
-			if (dmarker_3 == 0) dmarker_3 = 1;
-			else if (dmarker_3 != 1) codes[i] &= ~DMARKER_3;
-		}
-		else if (dmarker_3 == 1) dmarker_3 = 2;
-		if (codes[i] & DMARKER_4) {
-			if (dmarker_4 == 0) dmarker_4 = 1;
-			else if (dmarker_4 != 1) codes[i] &= ~DMARKER_4;
-		}
-		else if (dmarker_4 == 1) dmarker_4 = 2;
-		if (codes[i] & DMARKER_5) {
-			if (dmarker_5 == 0) dmarker_5 = 1;
-			else if (dmarker_5 != 1) codes[i] &= ~DMARKER_5;
-		}
-		else if (dmarker_5 == 1) dmarker_5 = 2;
 	}
 }
 
@@ -858,7 +761,7 @@ int CEdit::GetLeftSelectU(int pos_U)
 	{
 		pos_U--;
 		if (!pos_U) break;
-		if (m_buffer[pos_U] == '=' || m_buffer[pos_U] == '\r') {
+		if (m_buffer[pos_U] == '=' || m_buffer[pos_U] == '\n') {
 			pos_U++;
 			break;
 		}
@@ -874,7 +777,7 @@ int CEdit::GetRightSelectU(int pos_U)
 	{
 		pos_U++;
 		if (pos_U == m_buffer.size()) break;
-		if (m_buffer[pos_U] == '=' || m_buffer[pos_U] == '\r') break;
+		if (m_buffer[pos_U] == '=' || m_buffer[pos_U] == '\n') break;
 	}
 	return pos_U;
 }
@@ -885,39 +788,9 @@ inline void CEdit::SetMarker(int id, int* code)
 	else *code = (*code & 0xFFFF00FF) | id;
 }
 
-void CEdit::RemoveLeftMarker(int id, int pos_U)
-{
-	if (!pos_U) return;
-
-	while (true)
-	{
-		pos_U--;
-		if (!pos_U) break;
-		if (m_buffer[pos_U] == '=' || m_buffer[pos_U] == '\r') {
-			break;
-		}
-		codes[pos_U] &= ~id;
-	}
-}
-
-void CEdit::RemoveRightMarker(int id, int pos_U)
-{
-	if (pos_U == m_buffer.size()) return;
-
-	while (true)
-	{
-		pos_U++;
-		if (pos_U == m_buffer.size()) break;
-		if (m_buffer[pos_U] == '=' || m_buffer[pos_U] == '\r') {
-			break;
-		}
-		codes[pos_U] &= ~id;
-	}
-}
-
 int CEdit::GetCharWidthU(char c)
 {
-	if (c == '{' || c == '}' || c == '\r') return 0;
+	if (c == '{' || c == '}' || c == '\n') return 0;
 	return 1;
 }
 
@@ -939,7 +812,7 @@ bool CEdit::GetUFromP(int* pos_U, const int posX_P, const int posY_P)
 	{
 		curCharWidth_P = GetCharWidthU(m_buffer[curPos_U]) * charWidth_P;
 
-		if (curPosX_P + curCharWidth_P > textWidth_P || m_buffer[curPos_U] == '\r') {
+		if (curPosX_P + curCharWidth_P > textWidth_P || m_buffer[curPos_U] == '\n') {
 			if (isLine) break;
 			fixPos_U = -1;
 			curPosX_P = 0;
@@ -977,7 +850,7 @@ void CEdit::GetPFromU(int* posX_P, int* posY_P, const int pos_U)
 	{
 		curCharWidth_P = GetCharWidthU(m_buffer[curPos_U]) * charWidth_P;
 
-		if (curPosX_P + curCharWidth_P > textWidth_P || m_buffer[curPos_U] == '\r') {
+		if (curPosX_P + curCharWidth_P > textWidth_P || m_buffer[curPos_U] == '\n') {
 			curPosX_P = 0;
 			curPosY_P += lineHeight_P;
 		}
@@ -1039,7 +912,7 @@ void CEdit::Update()
 	{
 		curCharWidth_P = GetCharWidthU(m_buffer[curPos_U]) * charWidth_P;
 
-		if (charRect.left + curCharWidth_P > textWidth_P || m_buffer[curPos_U] == '\r') {
+		if (charRect.left + curCharWidth_P > textWidth_P || m_buffer[curPos_U] == '\n') {
 			if (charRect.top >= 0) {
 				charRect.right = rect.right;
 				charRect.bottom = charRect.top + lineHeight_P;
@@ -1047,15 +920,15 @@ void CEdit::Update()
 				SetDCBrushColor(hDC, RGB(curColor.r, curColor.g, curColor.b));
 				FillRect(hDC, &charRect, hBrush);
 			}
-			if (m_buffer[curPos_U] == '\r') {
-				if (codes[curPos_U] != 0) {
+			if (m_buffer[curPos_U] == '\n') {
+				/*if (codes[curPos_U] != 0) {
 					int h = (charRect.top + lineHeight_P - fixHeight - charHeight_P) >> 1;
 					string num = to_string(codes[curPos_U]);
 					num.insert(num.begin(), '<');
 					num.insert(num.end(), '>');
 					int w = (textOffset_P - num.size() * charWidth_P) >> 1;
 					TextOut(hDC, textWidth_P + w, fixHeight + h, num.data(), num.size());
-				}
+				}*/
 				fixHeight = charRect.top + lineHeight_P;
 			}
 			charRect.left = 0;
@@ -1068,17 +941,6 @@ void CEdit::Update()
 			curColor.Clear();
 			if (curPos_U >= min(caretPos_U, selectPos_U) && curPos_U < max(caretPos_U, selectPos_U)) curColor.Mix(0, 255, 0);
 			if (curPos_U >= startSelectPos && curPos_U < endSelectPos) curColor.Mix(150, 150, 150);
-			if (codes[curPos_U] & LMARKER_1) curColor.Mix(255, 255, 0);
-			if (codes[curPos_U] & LMARKER_2) curColor.Mix(255, 200, 0);
-			if (codes[curPos_U] & LMARKER_3) curColor.Mix(255, 150, 255);
-			if (codes[curPos_U] & LMARKER_4) curColor.Mix(255, 100, 255);
-			if (codes[curPos_U] & LMARKER_5) curColor.Mix(255, 50, 0);
-
-			if (codes[curPos_U] & DMARKER_1) curColor.Mix(0, 255, 255);
-			if (codes[curPos_U] & DMARKER_2) curColor.Mix(0, 200, 255);
-			if (codes[curPos_U] & DMARKER_3) curColor.Mix(0, 150, 255);
-			if (codes[curPos_U] & DMARKER_4) curColor.Mix(0, 100, 255);
-			if (codes[curPos_U] & DMARKER_5) curColor.Mix(0, 50, 255);
 			SetDCBrushColor(hDC, RGB(curColor.r, curColor.g, curColor.b));
 
 			subCharRect = charRect;
@@ -1122,19 +984,19 @@ void CEdit::Update()
 	{
 		curCharWidth_P = GetCharWidthU(m_buffer[curPos_U]) * charWidth_P;
 
-		if (charRect.left + curCharWidth_P > textWidth_P || m_buffer[curPos_U] == '\r') {
+		if (charRect.left + curCharWidth_P > textWidth_P || m_buffer[curPos_U] == '\n') {
 			charRect.left = 0;
 			charRect.top += lineHeight_P;
 		}
 
 		if (m_buffer[curPos_U] == '{') DrawOverline(curPos_U, charRect.left, charRect.top, curPos_U == caretPos_U);
 
-		if ((GetError(codes[curPos_U]) != ERR_NO_ERROR) && (GetError(codes[curPos_U]) != ERR_NO_TESTED)) {
+		/*if ((GetError(codes[curPos_U]) != ERR_NO_ERROR) && (GetError(codes[curPos_U]) != ERR_NO_TESTED)) {
 			SetDCBrushColor(hDC, RGB(250, 0, 0));
 			MoveToEx(hDC, charRect.left, charRect.top + lineHeight_P, nullptr);
 			LineTo(hDC, charRect.left + curCharWidth_P, charRect.top + lineHeight_P);
 			SetDCBrushColor(hDC, RGB(0, 0, 0));
-		}
+		}*/
 
 		charRect.left += curCharWidth_P;
 	}
@@ -1163,7 +1025,7 @@ void CEdit::DrawOverline(int pos_U, int posX_P, int posY_P, bool isSelect)
 	{
 		curCharWidth_P = GetCharWidthU(m_buffer[i]) * charWidth_P;
 
-		if (endPos_P + curCharWidth_P > textWidth_P || m_buffer[i] == '\r') {
+		if (endPos_P + curCharWidth_P > textWidth_P || m_buffer[i] == '\n') {
 			MoveToEx(hDC, startPos_P, curPosY_P + charOffset_P - 2 * overlineHeight_U, nullptr);
 			LineTo(hDC, endPos_P, curPosY_P + charOffset_P - 2 * overlineHeight_U);
 			startPos_P = endPos_P = 0;
@@ -1209,7 +1071,7 @@ int CEdit::GetOverlineHeight(int pos_U)
 int CEdit::GetLinePos(int pos_U)
 {
 	for (size_t i = pos_U; i < m_buffer.size(); i++)
-		if (m_buffer[i] == '\r') return i;
+		if (m_buffer[i] == '\n') return i;
 	return -1;
 }
 
@@ -1224,7 +1086,6 @@ int CEdit::GetSegmentPos(int pos_U)
 void CEdit::Restart()
 {
 	m_buffer.clear();
-	codes.clear();
 	undo.clear();
 	caretPos_U = selectPos_U = 0;
 	startSelectPos = endSelectPos = 0;
@@ -1304,13 +1165,6 @@ void CEdit::Load(string fileName)
 		in.read(&tempChar, sizeof(tempChar));
 		m_buffer.push_back(tempChar);
 	}
-	// Коды
-	in.read((char*)&tempInt, sizeof(tempInt));
-	for (size_t i = 0; i < tempInt; i++)
-	{
-		in.read((char*)&tempInt_2, sizeof(tempInt_2));
-		codes.push_back(tempInt_2);
-	}
 	// Сегменты
 	in.read((char*)&tempInt, sizeof(tempInt));
 	for (size_t i = 0; i < tempInt; i++)
@@ -1352,10 +1206,6 @@ void CEdit::Save(string fileName)
 	tempInt = m_buffer.size();
 	out.write((char*)&tempInt, sizeof(tempInt));
 	out.write(m_buffer.data(), tempInt);
-	// Коды
-	tempInt = codes.size();
-	out.write((char*)&tempInt, sizeof(tempInt));
-	out.write((char*)codes.data(), sizeof(tempInt) * tempInt);
 	// Сегменты
 	tempInt = segments.size();
 	out.write((char*)&tempInt, sizeof(tempInt));
