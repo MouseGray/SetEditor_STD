@@ -1,36 +1,31 @@
 #include "ETextComponent.h"
 
-void ETextComponent::erase(size_t end, ERedoUndoComponent::Type redoUndoType)
+std::string ETextComponent::erase(int count)
 {
-	switch (redoUndoType)
-	{
-		case ERedoUndoComponent::Type::Undo:
-			addUndo(ERedoUndoUnit(*this, &ETextComponent::insert, begin, std::string(m_buffer.substr(begin, end - begin)), ERedoUndoComponent::Type::Redo));
-			break;
-		case ERedoUndoComponent::Type::Redo:
-			addRedo(ERedoUndoUnit(*this, &ETextComponent::insert, begin, m_buffer.substr(begin, end - begin), ERedoUndoComponent::Type::Undo));
-			break;
-	}
-
-	if (begin == end) return;
-	m_buffer.erase(m_buffer.begin() + begin, m_buffer.begin() + end);
+	if (count == 0) return std::string();
+	auto size   = static_cast<int>(m_buffer.size());
+	auto start  = std::min(std::max(std::min(m_cursor + count, m_cursor), 0), size);
+	auto length = std::min(std::abs(count), size - start);
+	if (length == 0) return std::string();
+	std::string result = m_buffer.substr(start, length);
+	m_buffer.erase(start, length);
+	m_cursor = start;
+	return result;
 }
 
-void ETextComponent::insert(std::string text, ERedoUndoComponent::Type redoUndoType)
+int ETextComponent::insert(std::string text)
 {
 	toCorrectText(text);
+	if (text.size() == 0) return 0;
+	m_buffer.insert(m_cursor, text);
+	m_cursor += text.size();
+	return text.size();
+}
 
-	switch (redoUndoType)
-	{
-		case ERedoUndoComponent::Type::Undo:
-			addUndo(ERedoUndoUnit(*this, &ETextComponent::erase, offset, offset + text.size(), ERedoUndoComponent::Type::Redo));
-			break;
-		case ERedoUndoComponent::Type::Redo:
-			addRedo(ERedoUndoUnit(*this, &ETextComponent::erase, offset, offset + text.size(), ERedoUndoComponent::Type::Undo));
-			break;
-	}
-
-	m_buffer.insert(offset, text);
+void ETextComponent::setCursorPos(size_t pos) noexcept
+{
+	assert(pos <= m_buffer.size());
+	m_cursor = pos;
 }
 
 void ETextComponent::toCorrectText(std::string& text)

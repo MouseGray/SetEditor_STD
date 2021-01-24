@@ -7,7 +7,7 @@
 #include <deque>
 #include <fstream>
 
-#include "ETextComponent.h"
+#include "ERedoUndoComponent.h"
 
 #include "CheckSyntax.h"
 #include "LineNum.h"
@@ -109,7 +109,7 @@ private:
 	vector<Segment> segments;
 };
 
-class CEdit : public ETextComponent
+class CEdit : public ERedoUndoComponent
 {
 public:
 	// Команды окна
@@ -200,8 +200,6 @@ private:
 
 	string bufferText;
 	// Поля управления
-	size_t caretPos_U = 0;
-	size_t selectPos_U = 0;
 
 	int startSelectPos = 0;
 	int endSelectPos = 0;

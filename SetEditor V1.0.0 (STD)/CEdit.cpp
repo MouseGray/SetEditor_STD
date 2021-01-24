@@ -52,8 +52,8 @@ void CEdit::W_SetFont(HFONT font)
 
 void CEdit::W_LButtonDown(int x, int y, bool shift)
 {
-	GetUFromP((int*)&caretPos_U, x, y);
-	if (!shift) selectPos_U = caretPos_U;
+	GetUFromP((int*)&m_cursor, x, y);
+	if (!shift) m_sCursor = m_cursor;
 	SetCaretPosition();
 	Update();
 	if (startSelectPos != endSelectPos) {
@@ -61,7 +61,7 @@ void CEdit::W_LButtonDown(int x, int y, bool shift)
 		GetClientRect(hWnd, &rect);
 		POINT point = { rect.right >> 1, rect.bottom >> 1 };
 		ClientToScreen(hWnd, &point);
-		if (this->SegmentEditCallback != nullptr) SegmentEditCallback(&segments[GetSegmentPos(caretPos_U)], point.x, point.y);
+		if (this->SegmentEditCallback != nullptr) SegmentEditCallback(&segments[GetSegmentPos(m_cursor)], point.x, point.y);
 	}
 }
 
@@ -81,12 +81,12 @@ void CEdit::W_RButtonDown(int x, int y)
 	switch (result)
 	{
 		case 1: 
-			line = GetLinePos(min(caretPos_U, selectPos_U));
+			line = GetLinePos(min(m_cursor, m_sCursor));
 			if (line == -1) break;
 			Update();
 			break;
 		case 2:
-			line = GetLinePos(min(caretPos_U, selectPos_U));
+			line = GetLinePos(min(m_cursor, m_sCursor));
 			if (line == -1) break;
 			res = DialogBoxParam(nullptr, MAKEINTRESOURCE(IDD_DIALOG1), hWnd, LineNumProc, NULL);
 			if (res == -1) break;
@@ -111,8 +111,8 @@ void CEdit::W_MouseMove(int x, int y, bool shift)
 	int tempCaretPos_U;
 	bool fact = GetUFromP(&tempCaretPos_U, x, y);
 	if (shift) {
-		if (tempCaretPos_U != caretPos_U) {
-			caretPos_U = tempCaretPos_U;
+		if (tempCaretPos_U != m_cursor) {
+			m_cursor = tempCaretPos_U;
 
 			SetCaretPosition();
 			Update();
@@ -182,33 +182,18 @@ void CEdit::W_MouseWheel(int delta)
 
 void CEdit::W_Backspace()
 {
-	if (EraseSelect()) {
-		SetCaretPosition();
-		Update();
-		return;
-	}
-
-	if (ToLeft()) {
-		selectPos_U = caretPos_U;
-		Erase(caretPos_U, 1);
-
-		SetCaretPosition();
-		Update();
-	}
+	if (isSelected()) urErase<ERedoUndoComponent::Type::Undo>();
+	else urErase<ERedoUndoComponent::Type::Undo>(-1);
+	SetCaretPosition();
+	Update();
 }
 
 void CEdit::W_Delete()
 {
-	if (EraseSelect()) {
-		SetCaretPosition();
-		Update();
-		return;
-	}
-	if (caretPos_U < m_buffer.size()) {
-		Erase(caretPos_U, 1);
-
-		Update();
-	}
+	if (isSelected()) urErase<ERedoUndoComponent::Type::Undo>();
+	else urErase<ERedoUndoComponent::Type::Undo>(1);
+	SetCaretPosition();
+	Update();
 }
 
 void CEdit::W_Char(char c)
@@ -218,9 +203,8 @@ void CEdit::W_Char(char c)
 	if (c == '\r') c = '\n';
 	string character;
 	character += toupper(c);
-	Insert(caretPos_U, character, vector<int>(1, 0));
-	ToRight();
-	selectPos_U = caretPos_U;
+	Insert(m_cursor, character, vector<int>(1, 0));
+	m_sCursor = m_cursor;
 
 	SetCaretPosition();
 	Update();
@@ -228,14 +212,14 @@ void CEdit::W_Char(char c)
 
 void CEdit::W_Left(bool shift)
 {
-	if (caretPos_U != selectPos_U) {
-		caretPos_U = selectPos_U = min(caretPos_U, selectPos_U);
+	if (m_cursor != m_sCursor) {
+		m_cursor = m_sCursor = min(m_cursor, m_sCursor);
 		SetCaretPosition();
 		Update();
 		return;
 	}
 	if (ToLeft()) {
-		if (!shift) selectPos_U = caretPos_U;
+		if (!shift) m_sCursor = m_cursor;
 		SetCaretPosition();
 		Update();
 	}
@@ -243,14 +227,14 @@ void CEdit::W_Left(bool shift)
 
 void CEdit::W_Right(bool shift)
 {
-	if (caretPos_U != selectPos_U) {
-		caretPos_U = selectPos_U = max(caretPos_U, selectPos_U);
+	if (m_cursor != m_sCursor) {
+		m_cursor = m_sCursor = max(m_cursor, m_sCursor);
 		SetCaretPosition();
 		Update();
 		return;
 	}
 	if (ToRight()) {
-		if (!shift) selectPos_U = caretPos_U;
+		if (!shift) m_sCursor = m_cursor;
 		SetCaretPosition();
 		Update();
 	}
@@ -259,7 +243,7 @@ void CEdit::W_Right(bool shift)
 void CEdit::W_Up(bool shift)
 {
 	if (ToUp()) {
-		if (!shift) selectPos_U = caretPos_U;
+		if (!shift) m_sCursor = m_cursor;
 		SetCaretPosition();
 		Update();
 	}
@@ -268,7 +252,7 @@ void CEdit::W_Up(bool shift)
 void CEdit::W_Down(bool shift)
 {
 	if (ToDown()) {
-		if (!shift) selectPos_U = caretPos_U;
+		if (!shift) m_sCursor = m_cursor;
 		SetCaretPosition();
 		Update();
 	}
@@ -277,7 +261,7 @@ void CEdit::W_Down(bool shift)
 void CEdit::W_Home(bool shift)
 {
 	if (ToHome()) {
-		if (!shift) selectPos_U = caretPos_U;
+		if (!shift) m_sCursor = m_cursor;
 		SetCaretPosition();
 		Update();
 	}
@@ -286,7 +270,7 @@ void CEdit::W_Home(bool shift)
 void CEdit::W_End(bool shift)
 {
 	if (ToEnd()) {
-		if (!shift) selectPos_U = caretPos_U;
+		if (!shift) m_sCursor = m_cursor;
 		SetCaretPosition();
 		Update();
 	}
@@ -295,7 +279,7 @@ void CEdit::W_End(bool shift)
 void CEdit::W_Prior(bool shift)
 {
 	if (ToPrior()) {
-		if (!shift) selectPos_U = caretPos_U;
+		if (!shift) m_sCursor = m_cursor;
 		SetCaretPosition();
 		Update();
 	}
@@ -304,7 +288,7 @@ void CEdit::W_Prior(bool shift)
 void CEdit::W_Next(bool shift)
 {
 	if (ToNext()) {
-		if (!shift) selectPos_U = caretPos_U;
+		if (!shift) m_sCursor = m_cursor;
 		SetCaretPosition();
 		Update();
 	}
@@ -370,8 +354,8 @@ void CEdit::_Erase(size_t off, size_t count)
 
 	if (!tempSegments.empty()) this->segments.erase(this->segments.begin() + startPos_S, this->segments.begin() + startPos_S + tempSegments.size());
 
-	//undo.back().top().CreateRemove(caretPos_U, selectPos_U, startPos_S, m_buffer.substr(off, count), vector<int>(codes.begin() + off, codes.begin() + off + count), tempSegments);
-	erase(off, off + count, ERedoUndoComponent::Type::Undo);
+	//undo.back().top().CreateRemove(m_cursor, m_sCursor, startPos_S, m_buffer.substr(off, count), vector<int>(codes.begin() + off, codes.begin() + off + count), tempSegments);
+	urErase<ERedoUndoComponent::Type::Undo>(off);
 	
 	//this->m_buffer.erase(this->m_buffer.begin() + off, this->m_buffer.begin() + off + count);
 	//this->codes.erase(this->codes.begin() + off, this->codes.begin() + off + count);
@@ -402,9 +386,8 @@ void CEdit::_Insert(size_t off, const string& text, const vector<int>& codes)
 
 	this->segments.insert(this->segments.begin() + startPos_S, count, Segment());
 
-	//undo.back().top().CreateAdd(caretPos_U, selectPos_U, startPos_S, text.size(), count);
-	std::string text_2 = text;
-	insert(off, text_2, ERedoUndoComponent::Type::Undo);
+	//undo.back().top().CreateAdd(m_cursor, m_sCursor, startPos_S, text.size(), count);
+	urInsert<ERedoUndoComponent::Type::Undo>(text);
 	//this->m_buffer.insert(this->m_buffer.begin() + off, text.begin(), text.end());
 	//this->codes.insert(this->codes.begin() + off, codes.begin(), codes.end());
 }
@@ -417,16 +400,16 @@ void CEdit::AddUndo()
 
 bool CEdit::EraseSelect()
 {
-	if (caretPos_U == selectPos_U) return false;
-	Erase(min(caretPos_U, selectPos_U), max(caretPos_U, selectPos_U) - min(caretPos_U, selectPos_U));
-	caretPos_U = selectPos_U = min(caretPos_U, selectPos_U);
+	if (m_cursor == m_sCursor) return false;
+	Erase(min(m_cursor, m_sCursor), max(m_cursor, m_sCursor) - min(m_cursor, m_sCursor));
+	m_cursor = m_sCursor = min(m_cursor, m_sCursor);
 	return true;
 }
 
 bool CEdit::ToLeft()
 {
-	if (caretPos_U > 0) {
-		caretPos_U--;
+	if (m_cursor > 0) {
+		m_cursor--;
 		return true;
 	}
 	return false;
@@ -434,8 +417,8 @@ bool CEdit::ToLeft()
 
 bool CEdit::ToRight()
 {
-	if (caretPos_U < m_buffer.size()) {
-		caretPos_U++;
+	if (m_cursor < m_buffer.size()) {
+		m_cursor++;
 		return true;
 	}
 	return false;
@@ -445,11 +428,11 @@ bool CEdit::ToUp()
 {
 	int posX_P = 0;
 	int posY_P = 0;
-	GetPFromU(&posX_P, &posY_P, caretPos_U);
+	GetPFromU(&posX_P, &posY_P, m_cursor);
 	posX_P += 1;
 	posY_P -= lineHeight_P - 1;
 	if (posY_P > 0) {
-		GetUFromP((int*)&caretPos_U, posX_P, posY_P);
+		GetUFromP((int*)&m_cursor, posX_P, posY_P);
 		return true;
 	}
 	return false;
@@ -459,13 +442,13 @@ bool CEdit::ToDown()
 {
 	int posX_P = 0;
 	int posY_P = 0;
-	GetPFromU(&posX_P, &posY_P, caretPos_U);
+	GetPFromU(&posX_P, &posY_P, m_cursor);
 	posX_P += 1;
 	posY_P += lineHeight_P + 1;
 	int tempCaretPos = 0;
 	GetUFromP(&tempCaretPos, posX_P, posY_P);
-	if (tempCaretPos != caretPos_U) {
-		caretPos_U = tempCaretPos;
+	if (tempCaretPos != m_cursor) {
+		m_cursor = tempCaretPos;
 		return true;
 	}
 	return false;
@@ -475,13 +458,13 @@ bool CEdit::ToHome()
 {
 	int posX_P = 0;
 	int posY_P = 0;
-	GetPFromU(&posX_P, &posY_P, caretPos_U);
+	GetPFromU(&posX_P, &posY_P, m_cursor);
 	posX_P = 0;
 	posY_P += 1;
 	int tempCaretPos = 0;
 	GetUFromP(&tempCaretPos, posX_P, posY_P);
-	if (tempCaretPos != caretPos_U) {
-		caretPos_U = tempCaretPos;
+	if (tempCaretPos != m_cursor) {
+		m_cursor = tempCaretPos;
 		return true;
 	}
 	return false;
@@ -491,13 +474,13 @@ bool CEdit::ToEnd()
 {
 	int posX_P = 0;
 	int posY_P = 0;
-	GetPFromU(&posX_P, &posY_P, caretPos_U);
+	GetPFromU(&posX_P, &posY_P, m_cursor);
 	posX_P = textWidth_P;
 	posY_P += 1;
 	int tempCaretPos = 0;
 	GetUFromP(&tempCaretPos, posX_P, posY_P);
-	if (tempCaretPos != caretPos_U) {
-		caretPos_U = tempCaretPos;
+	if (tempCaretPos != m_cursor) {
+		m_cursor = tempCaretPos;
 		return true;
 	}
 	return false;
@@ -507,13 +490,13 @@ bool CEdit::ToPrior()
 {
 	int posX_P = 0;
 	int posY_P = 0;
-	GetPFromU(&posX_P, &posY_P, caretPos_U);
+	GetPFromU(&posX_P, &posY_P, m_cursor);
 	posX_P += 1;
 	posY_P -= pageHeight_P;
 	int tempCaretPos = 0;
 	GetUFromP(&tempCaretPos, posX_P, posY_P);
-	if (tempCaretPos != caretPos_U) {
-		caretPos_U = tempCaretPos;
+	if (tempCaretPos != m_cursor) {
+		m_cursor = tempCaretPos;
 		return true;
 	}
 	return false;
@@ -523,13 +506,13 @@ bool CEdit::ToNext()
 {
 	int posX_P = 0;
 	int posY_P = 0;
-	GetPFromU(&posX_P, &posY_P, caretPos_U);
+	GetPFromU(&posX_P, &posY_P, m_cursor);
 	posX_P += 1;
 	posY_P += pageHeight_P;
 	int tempCaretPos = 0;
 	GetUFromP(&tempCaretPos, posX_P, posY_P);
-	if (tempCaretPos != caretPos_U) {
-		caretPos_U = tempCaretPos;
+	if (tempCaretPos != m_cursor) {
+		m_cursor = tempCaretPos;
 		return true;
 	}
 	return false;
@@ -541,11 +524,9 @@ void CEdit::ToBack()
 	// if (undo.empty()) return;
 	/*while (!undo.back().empty())
 	{
-		undo.back().top().Release(&m_buffer, &codes, &caretPos_U, &selectPos_U, &segments);
+		undo.back().top().Release(&m_buffer, &codes, &m_cursor, &m_sCursor, &segments);
 		undo.back().pop();
 	}*/
-
-	undo.pop_back();
 
 	UpdateScroll();
 	SetCaretPosition();
@@ -562,39 +543,39 @@ void CEdit::Cut()
 
 void CEdit::Copy()
 {
-	bufferText = m_buffer.substr(min(caretPos_U, selectPos_U), max(caretPos_U, selectPos_U) - min(caretPos_U, selectPos_U));
+	bufferText = m_buffer.substr(min(m_cursor, m_sCursor), max(m_cursor, m_sCursor) - min(m_cursor, m_sCursor));
 }
 
 void CEdit::Paste()
 {
 	EraseSelect();
-	caretPos_U = selectPos_U = caretPos_U + Insert(caretPos_U, bufferText, vector<int>(bufferText.size(), 0));
+	m_cursor = m_sCursor = m_cursor + Insert(m_cursor, bufferText, vector<int>(bufferText.size(), 0));
 	SetCaretPosition();
 	Update();
 }
 
 void CEdit::SetOverline()
 {
-	if (caretPos_U == selectPos_U) return;
+	if (m_cursor == m_sCursor) return;
 	string text;
 	vector<int> codes;
-	text.insert(text.begin(), this->m_buffer.begin() + min(caretPos_U, selectPos_U), this->m_buffer.begin() + max(caretPos_U, selectPos_U));
+	text.insert(text.begin(), this->m_buffer.begin() + min(m_cursor, m_sCursor), this->m_buffer.begin() + max(m_cursor, m_sCursor));
 	text.insert(text.begin(), '{');
 	text.insert(text.end(), '}');
 	AddUndo();
 	undo.back().push(CAction());
-	_Erase(min(caretPos_U, selectPos_U), max(caretPos_U, selectPos_U) - min(caretPos_U, selectPos_U));
-	_Insert(min(caretPos_U, selectPos_U), text, codes);
-	caretPos_U = selectPos_U = min(caretPos_U, selectPos_U);
+	_Erase(min(m_cursor, m_sCursor), max(m_cursor, m_sCursor) - min(m_cursor, m_sCursor));
+	_Insert(min(m_cursor, m_sCursor), text, codes);
+	m_cursor = m_sCursor = min(m_cursor, m_sCursor);
 	UpdateOverline();
 	Update();
 }
 
 void CEdit::Mark(int id)
 {
-	if (caretPos_U == selectPos_U) return;
+	if (m_cursor == m_sCursor) return;
 
-	caretPos_U = selectPos_U = min(caretPos_U, selectPos_U);
+	m_cursor = m_sCursor = min(m_cursor, m_sCursor);
 	SetCaretPosition();
 	Update();
 }
@@ -608,7 +589,7 @@ bool CEdit::Check()
 void CEdit::SetCaretPosition(bool off)
 {
 	int posX_P, posY_P;
-	GetPFromU(&posX_P, &posY_P, caretPos_U);
+	GetPFromU(&posX_P, &posY_P, m_cursor);
 	if (off) {
 		if (posY_P < 0) {
 			int offset = (posY_P - lineHeight_P + 1) / lineHeight_P;
@@ -939,7 +920,7 @@ void CEdit::Update()
 			charRect.right = charRect.left + charWidth_P;
 			charRect.bottom = charRect.top + lineHeight_P;
 			curColor.Clear();
-			if (curPos_U >= min(caretPos_U, selectPos_U) && curPos_U < max(caretPos_U, selectPos_U)) curColor.Mix(0, 255, 0);
+			if (curPos_U >= min(m_cursor, m_sCursor) && curPos_U < max(m_cursor, m_sCursor)) curColor.Mix(0, 255, 0);
 			if (curPos_U >= startSelectPos && curPos_U < endSelectPos) curColor.Mix(150, 150, 150);
 			SetDCBrushColor(hDC, RGB(curColor.r, curColor.g, curColor.b));
 
@@ -989,7 +970,7 @@ void CEdit::Update()
 			charRect.top += lineHeight_P;
 		}
 
-		if (m_buffer[curPos_U] == '{') DrawOverline(curPos_U, charRect.left, charRect.top, curPos_U == caretPos_U);
+		if (m_buffer[curPos_U] == '{') DrawOverline(curPos_U, charRect.left, charRect.top, curPos_U == m_cursor);
 
 		/*if ((GetError(codes[curPos_U]) != ERR_NO_ERROR) && (GetError(codes[curPos_U]) != ERR_NO_TESTED)) {
 			SetDCBrushColor(hDC, RGB(250, 0, 0));
@@ -1087,7 +1068,7 @@ void CEdit::Restart()
 {
 	m_buffer.clear();
 	undo.clear();
-	caretPos_U = selectPos_U = 0;
+	m_cursor = m_sCursor = 0;
 	startSelectPos = endSelectPos = 0;
 
 	segments.clear();
@@ -1186,9 +1167,9 @@ void CEdit::Load(string fileName)
 	}
 	// Позиции каретки и выделения
 	in.read((char*)&tempInt, sizeof(tempInt));
-	caretPos_U = tempInt;
+	m_cursor = tempInt;
 	in.read((char*)&tempInt, sizeof(tempInt));
-	selectPos_U = tempInt;
+	m_sCursor = tempInt;
 	// Позиции выделения
 	in.read((char*)&tempInt, sizeof(tempInt));
 	startSelectPos = tempInt;
@@ -1221,8 +1202,8 @@ void CEdit::Save(string fileName)
 		out.write((char*)segments[i].pointers.data(), sizeof(tempInt) * tempInt);
 	}
 	// Позиции каретки и выделения
-	out.write((char*)&caretPos_U, sizeof(caretPos_U));
-	out.write((char*)&selectPos_U, sizeof(selectPos_U));
+	out.write((char*)&m_cursor, sizeof(m_cursor));
+	out.write((char*)&m_sCursor, sizeof(m_sCursor));
 	// Позиции выделения
 	out.write((char*)&startSelectPos, sizeof(startSelectPos));
 	out.write((char*)&endSelectPos, sizeof(endSelectPos));

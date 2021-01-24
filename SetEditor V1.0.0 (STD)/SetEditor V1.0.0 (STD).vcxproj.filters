@@ -81,7 +81,7 @@
     <ClCompile Include="ERedoUndoUnit.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="EControlComponent.cpp">
+    <ClCompile Include="ESelectComponent.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
@@ -149,7 +149,7 @@
     <ClInclude Include="ERedoUndoUnit.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="EControlComponent.h">
+    <ClInclude Include="ESelectComponent.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,25 +1,49 @@
 #include "ERedoUndoComponent.h"
 
-void ERedoUndoComponent::addUndo(ERedoUndoUnit&& unit)
-{
-	undo.push_back(unit);
-}
-
-void ERedoUndoComponent::addRedo(ERedoUndoUnit&& unit)
-{
-	redo.push_back(unit);
-}
-
 void ERedoUndoComponent::releaseUndo()
 {
 	if (undo.empty()) return;
-	undo.back().release();
+	switch (undo.back()->action)
+	{
+		case ERedoUndoUnit::Action::Insert: {
+			auto unit = undo.back()->toERUInsert();
+			setCursorPos(unit->cursor);
+			urErase<ERedoUndoComponent::Type::Redo>(unit->count);
+			break;
+		}
+		case ERedoUndoUnit::Action::Erase: {
+			auto unit = undo.back()->toERUErase();
+			setCursorPos(unit->cursor);
+			urInsert<ERedoUndoComponent::Type::Redo>(unit->text);
+			setCursorPos(unit->cursor);
+			setSelectCursorPos(unit->sCursor);
+			break;
+		}
+	}
+	delete undo.back();
 	undo.pop_back();
 }
 
 void ERedoUndoComponent::releaseRedo()
 {
-	if (undo.empty()) return;
-	redo.back().release();
+	if (redo.empty()) return;
+	switch (redo.back()->action)
+	{
+		case ERedoUndoUnit::Action::Insert: {
+			auto unit = redo.back()->toERUInsert();
+			setCursorPos(unit->cursor);
+			urErase<ERedoUndoComponent::Type::Undo>(unit->count);
+			break;
+		}
+		case ERedoUndoUnit::Action::sErase: {
+			auto unit = redo.back()->toERUErase();
+			setCursorPos(unit->cursor);
+			urInsert<ERedoUndoComponent::Type::Undo>(unit->text);
+			setCursorPos(unit->cursor);
+			setSelectCursorPos(unit->sCursor);
+			break;
+		}
+	}
+	delete undo.back();
 	redo.pop_back();
 }

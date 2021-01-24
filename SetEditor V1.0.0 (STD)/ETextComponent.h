@@ -3,15 +3,14 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <cassert>
 
-#include "ERedoUndoComponent.h"
-
-class ETextComponent : public ERedoUndoComponent
+class ETextComponent
 {
 public:
-	void erase(size_t end, ERedoUndoComponent::Type redoUndoType);
+	std::string erase(int count);
 
-	void insert(std::string text, ERedoUndoComponent::Type redoUndoType);
+	int insert(std::string text);
 
 	void setCursorPos(size_t pos) noexcept;
 
@@ -20,6 +19,6 @@ public:
 	static bool isNotCorrectChar(const char c) noexcept;
 	static bool isCorrectChar(const char c) noexcept;
 public:
-	size_t m_cursor = 0;
+	int m_cursor = 0;
 	std::string m_buffer;
 };
