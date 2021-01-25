@@ -1,7 +1,8 @@
 #pragma once
 #include <string>
 
-#include "ESelectComponent.h"
+#undef min
+#undef max
 
 struct ERedoUndoErase;
 struct ERedoUndoInsert;
@@ -14,7 +15,9 @@ struct ERedoUndoUnit
 		Null,
 		Erase,
 		Insert,
-		Cursor
+		Cursor,
+		InsertOverline,
+		EraseOverline
 	};
 
 	ERedoUndoUnit(Action _action);
@@ -45,4 +48,18 @@ struct ERedoUndoCursor : public ERedoUndoUnit
 	ERedoUndoCursor() : ERedoUndoUnit(Action::Cursor) {}
 	int cursor = 0;
 	int sCursor = 0;
+};
+
+struct ERedoUndoInsertOverline : public ERedoUndoUnit
+{
+	ERedoUndoInsertOverline() : ERedoUndoUnit(Action::InsertOverline) {}
+	int startPos = 0;
+	int endPos = 0;
+};
+
+struct ERedoUndoEraseOverline : public ERedoUndoUnit
+{
+	ERedoUndoEraseOverline() : ERedoUndoUnit(Action::EraseOverline) {}
+	int startPos = 0;
+	int endPos = 0;
 };

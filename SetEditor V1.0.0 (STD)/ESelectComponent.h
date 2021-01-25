@@ -1,14 +1,23 @@
 #pragma once
 
-#include "ETextComponent.h"
+#include "EOverlineComponent.h"
 
-class EControlComponent
+class EControlComponent : public EOverlineComponent
 {
 public:
 	inline void removeSelect();
 	bool isSelected();
 
-	int moveTo(int pos);
+	template <ERedoUndoComponent::Type T>
+	void moveTo(int cursor, int sCursor)
+	{
+		auto urUnit = new ERedoUndoCursor();
+		urUnit->cursor = m_cursor;
+		urUnit->sCursor = m_sCursor;
+		m_cursor = cursor;
+		m_sCursor = sCursor;
+		add<T>(urUnit);
+	}
 
 	void setSelectCursorPos(size_t pos) noexcept;
 

@@ -1,18 +1,8 @@
 #include "ETextComponent.h"
 
-std::string ETextComponent::erase(int pos, int count)
+int ETextComponent::packIntoBorders(int pos) noexcept
 {
-	std::string result = m_buffer.substr(pos, count);
-	m_buffer.erase(pos, count);
-	return result;
-}
-
-int ETextComponent::insert(int pos, std::string text)
-{
-	toCorrectText(text);
-	if (text.size() == 0) return 0;
-	m_buffer.insert(pos, text);
-	return text.size();
+	return std::max(std::min(pos, static_cast<int>(m_buffer.size())), 0);
 }
 
 void ETextComponent::toCorrectText(std::string& text)

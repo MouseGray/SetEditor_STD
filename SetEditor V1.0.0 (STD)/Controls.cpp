@@ -561,7 +561,7 @@ LRESULT CALLBACK scrollWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					{
 						case PROP_SCROLL_LINESIZE:
 						{
-							scrolls[i].plineSize = max(1, lParam);
+							scrolls[i].plineSize = std::max(1, static_cast<int>(lParam));
 
 							InvalidateRect(hWnd, 0, false);
 							break;
@@ -570,7 +570,7 @@ LRESULT CALLBACK scrollWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 						{
 							GetClientRect(hWnd, &rect);
 
-							scrolls[i].lines = max(1, lParam);
+							scrolls[i].lines = std::max(1, static_cast<int>(lParam));
 
 							scrolls[i].slineSize = 
 								(scrolls[i].type ? ((double)rect.right / lParam) : ((double)rect.bottom / lParam));

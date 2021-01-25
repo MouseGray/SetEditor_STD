@@ -76,7 +76,7 @@ LRESULT CALLBACK keypadWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			SetWindowPos(WND_keypad_std_buttons[23], 0, 180, 110, 58, 28, SWP_NOZORDER);
 			SetWindowPos(WND_keypad_std_buttons[24], 0, 240, 110, 28, 28, SWP_NOZORDER);
 
-			for (size_t i = 0; i < min(bsize, 5); i++)
+			for (size_t i = 0; i < std::min(bsize, static_cast<size_t>(5)); i++)
 				SetWindowPos(WND_keypad_user_buttons[i], 0, 20 + 30*i, 110, 28, 28, SWP_NOZORDER);
 			break;
 		}
@@ -168,7 +168,7 @@ LRESULT CALLBACK keypadWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 						text = pUI->GetCurrentTask()->SetNames[i];
 						WND_keypad_user_buttons[i] = CreateWindow("nButton", text.data(), WS_VISIBLE | WS_BORDER | WS_CHILD, 0, 0, 0, 0, hWnd, nullptr, 0, nullptr);
 					}
-					for (size_t i = 0; i < min(bsize, 5); i++)
+					for (size_t i = 0; i < std::min(bsize, static_cast<size_t>(5)); i++)
 						SetWindowPos(WND_keypad_user_buttons[i], 0, 20 + 30 * i, 110, 28, 28, SWP_NOZORDER);
 					break;
 				}

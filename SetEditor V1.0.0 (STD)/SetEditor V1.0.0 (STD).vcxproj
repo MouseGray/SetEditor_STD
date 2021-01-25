@@ -83,7 +83,7 @@
       <Optimization>Disabled</Optimization>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -109,7 +109,7 @@
       <Optimization>Disabled</Optimization>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -132,7 +132,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Program Files %28x86%29\MySQL\MySQL Server 5.7\include;C:\Program Files %28x86%29\MySQL\Connector C++ 8.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
-      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -153,7 +153,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Program Files %28x86%29\MySQL\MySQL Server 5.7\include;C:\Program Files %28x86%29\MySQL\Connector C++ 8.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
-      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -178,6 +178,7 @@
     </ClCompile>
     <ClCompile Include="DATLib.cpp" />
     <ClCompile Include="EFace.cpp" />
+    <ClCompile Include="EOverlineComponent.cpp" />
     <ClCompile Include="ESelectComponent.cpp" />
     <ClCompile Include="ERedoUndoComponent.cpp" />
     <ClCompile Include="ERedoUndoUnit.cpp" />
@@ -204,6 +205,7 @@
     <ClInclude Include="CTable.h" />
     <ClInclude Include="DATLib.h" />
     <ClInclude Include="EFace.h" />
+    <ClInclude Include="EOverlineComponent.h" />
     <ClInclude Include="ESelectComponent.h" />
     <ClInclude Include="ERedoUndoComponent.h" />
     <ClInclude Include="ERedoUndoUnit.h" />

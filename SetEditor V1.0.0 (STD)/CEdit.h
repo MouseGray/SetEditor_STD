@@ -1,5 +1,7 @@
 #pragma once
 
+#include "EFace.h"
+
 #include <Windows.h>
 
 
@@ -7,7 +9,7 @@
 #include <deque>
 #include <fstream>
 
-#include "EFace.h"
+
 
 #include "CheckSyntax.h"
 #include "LineNum.h"

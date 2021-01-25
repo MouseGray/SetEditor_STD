@@ -182,16 +182,16 @@ void CEdit::W_MouseWheel(int delta)
 
 void CEdit::W_Backspace()
 {
-	if (isSelected()) erase();
-	else erase(-1);
+	if (isSelected()) erase<>();
+	else erase<>(-1);
 	SetCaretPosition();
 	Update();
 }
 
 void CEdit::W_Delete()
 {
-	if (isSelected()) erase();
-	else erase(1);
+	if (isSelected()) erase<>();
+	else erase<>(1);
 	SetCaretPosition();
 	Update();
 }
@@ -556,17 +556,18 @@ void CEdit::Paste()
 
 void CEdit::SetOverline()
 {
-	if (m_cursor == m_sCursor) return;
-	string text;
-	vector<int> codes;
-	text.insert(text.begin(), this->m_buffer.begin() + min(m_cursor, m_sCursor), this->m_buffer.begin() + max(m_cursor, m_sCursor));
-	text.insert(text.begin(), '{');
-	text.insert(text.end(), '}');
-	AddUndo();
-	undo.back().push(CAction());
-	_Erase(min(m_cursor, m_sCursor), max(m_cursor, m_sCursor) - min(m_cursor, m_sCursor));
-	_Insert(min(m_cursor, m_sCursor), text, codes);
-	m_cursor = m_sCursor = min(m_cursor, m_sCursor);
+	setOverline<>();
+	//if (m_cursor == m_sCursor) return;
+	//string text;
+	//vector<int> codes;
+	//text.insert(text.begin(), this->m_buffer.begin() + min(m_cursor, m_sCursor), this->m_buffer.begin() + max(m_cursor, m_sCursor));
+	//text.insert(text.begin(), '{');
+	//text.insert(text.end(), '}');
+	//AddUndo();
+	//undo.back().push(CAction());
+	//_Erase(min(m_cursor, m_sCursor), max(m_cursor, m_sCursor) - min(m_cursor, m_sCursor));
+	//_Insert(min(m_cursor, m_sCursor), text, codes);
+	//m_cursor = m_sCursor = min(m_cursor, m_sCursor);
 	UpdateOverline();
 	Update();
 }
