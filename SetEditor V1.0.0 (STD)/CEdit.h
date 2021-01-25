@@ -7,7 +7,7 @@
 #include <deque>
 #include <fstream>
 
-#include "ERedoUndoComponent.h"
+#include "EFace.h"
 
 #include "CheckSyntax.h"
 #include "LineNum.h"
@@ -109,7 +109,7 @@ private:
 	vector<Segment> segments;
 };
 
-class CEdit : public ERedoUndoComponent
+class CEdit : public EFace
 {
 public:
 	// Команды окна

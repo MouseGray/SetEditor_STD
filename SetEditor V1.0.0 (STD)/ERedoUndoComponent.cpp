@@ -1,49 +1,72 @@
 #include "ERedoUndoComponent.h"
 
-void ERedoUndoComponent::releaseUndo()
+void ERedoUndoComponent::beginUndo()
 {
-	if (undo.empty()) return;
-	switch (undo.back()->action)
-	{
-		case ERedoUndoUnit::Action::Insert: {
-			auto unit = undo.back()->toERUInsert();
-			setCursorPos(unit->cursor);
-			urErase<ERedoUndoComponent::Type::Redo>(unit->count);
-			break;
-		}
-		case ERedoUndoUnit::Action::Erase: {
-			auto unit = undo.back()->toERUErase();
-			setCursorPos(unit->cursor);
-			urInsert<ERedoUndoComponent::Type::Redo>(unit->text);
-			setCursorPos(unit->cursor);
-			setSelectCursorPos(unit->sCursor);
-			break;
-		}
-	}
-	delete undo.back();
-	undo.pop_back();
+	undo.push_back(std::stack<ERedoUndoUnit*>());
 }
 
-void ERedoUndoComponent::releaseRedo()
+void ERedoUndoComponent::addUndo(ERedoUndoUnit* unit)
 {
-	if (redo.empty()) return;
-	switch (redo.back()->action)
-	{
-		case ERedoUndoUnit::Action::Insert: {
-			auto unit = redo.back()->toERUInsert();
-			setCursorPos(unit->cursor);
-			urErase<ERedoUndoComponent::Type::Undo>(unit->count);
-			break;
-		}
-		case ERedoUndoUnit::Action::sErase: {
-			auto unit = redo.back()->toERUErase();
-			setCursorPos(unit->cursor);
-			urInsert<ERedoUndoComponent::Type::Undo>(unit->text);
-			setCursorPos(unit->cursor);
-			setSelectCursorPos(unit->sCursor);
-			break;
+	undo.back().push(unit);
+}
+
+void ERedoUndoComponent::beginRedo()
+{
+	redo.push_back(std::stack<ERedoUndoUnit*>());
+}
+
+void ERedoUndoComponent::addRedo(ERedoUndoUnit* unit)
+{
+	redo.back().push(unit);
+}
+
+bool ERedoUndoComponent::releaseUndo()
+{
+	if (undo.empty()) return false;
+	if (undo.back().empty()) {
+		undo.pop_back();
+		return false;
+	}
+	return true;
+}
+
+ERedoUndoUnit* ERedoUndoComponent::getUndo()
+{
+	return undo.back().top();
+}
+
+void ERedoUndoComponent::removeUndo()
+{
+	undo.back().pop();
+}
+
+bool ERedoUndoComponent::releaseRedo()
+{
+	if (redo.empty()) return false;
+	if (redo.back().empty()) {
+		redo.pop_back();
+		return false;
+	}
+	return true;
+}
+
+ERedoUndoUnit* ERedoUndoComponent::getRedo()
+{
+	return undo.back().top();
+}
+
+void ERedoUndoComponent::removeRedo()
+{
+	redo.back().pop();
+}
+
+void ERedoUndoComponent::clearRedo()
+{
+	for (auto a : redo) {
+		while (!a.empty()) {
+			delete a.top();
+			a.pop();
 		}
 	}
-	delete undo.back();
-	redo.pop_back();
+	redo.clear();
 }

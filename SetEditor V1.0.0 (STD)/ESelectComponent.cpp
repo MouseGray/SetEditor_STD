@@ -1,37 +1,23 @@
 #include "ESelectComponent.h"
 
-int ESelectComponent::sInsert(const std::string& text)
-{
-    auto res = insert(text);
-    removeSelect();
-    return res;
-}
-
-std::string ESelectComponent::sErase()
-{
-    auto res = erase(m_sCursor - m_cursor);
-    removeSelect();
-    return res;
-}
-
-std::string ESelectComponent::sErase(int count)
-{
-    auto res = erase(count);
-    removeSelect();
-    return res;
-}
-
-inline void ESelectComponent::removeSelect()
+inline void EControlComponent::removeSelect()
 {
     m_sCursor = m_cursor;
 }
 
-bool ESelectComponent::isSelected()
+bool EControlComponent::isSelected()
 {
     return m_cursor != m_sCursor;
 }
 
-void ESelectComponent::setSelectCursorPos(size_t pos) noexcept
+int EControlComponent::moveTo(int pos)
+{
+    auto res = m_cursor;
+    m_cursor = m_sCursor = pos;
+    return res;
+}
+
+void EControlComponent::setSelectCursorPos(size_t pos) noexcept
 {
     m_sCursor = pos;
 }

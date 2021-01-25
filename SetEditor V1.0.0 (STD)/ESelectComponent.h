@@ -2,17 +2,17 @@
 
 #include "ETextComponent.h"
 
-class ESelectComponent : public ETextComponent
+class EControlComponent
 {
 public:
-	int sInsert(const std::string& text);
-	std::string sErase();
-	std::string sErase(int count);
-
 	inline void removeSelect();
 	bool isSelected();
 
+	int moveTo(int pos);
+
 	void setSelectCursorPos(size_t pos) noexcept;
+
 public:
+	int m_cursor  = 0;
 	int m_sCursor = 0;
 };

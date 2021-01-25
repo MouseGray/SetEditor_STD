@@ -8,17 +8,14 @@
 class ETextComponent
 {
 public:
-	std::string erase(int count);
+	std::string erase(int pos, int count);
 
-	int insert(std::string text);
-
-	void setCursorPos(size_t pos) noexcept;
+	int insert(int pos, std::string text);
 
 	void toCorrectText(std::string& text);
 
 	static bool isNotCorrectChar(const char c) noexcept;
 	static bool isCorrectChar(const char c) noexcept;
 public:
-	int m_cursor = 0;
 	std::string m_buffer;
 };

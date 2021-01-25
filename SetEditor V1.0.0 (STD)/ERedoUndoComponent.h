@@ -1,10 +1,11 @@
 #pragma once
 
 #include <list>
+#include <stack>
 
 #include "ERedoUndoUnit.h"
 
-class ERedoUndoComponent : public ESelectComponent
+class ERedoUndoComponent
 {
 public:
 	enum class Type : char {
@@ -13,52 +14,21 @@ public:
 		Redo
 	};
 
-	template<ERedoUndoComponent::Type T>
-	void urInsert(const std::string& text);
-	template<ERedoUndoComponent::Type T>
-	void urErase();
-	template<ERedoUndoComponent::Type T>
-	void urErase(int count);
+	void beginUndo();
+	void addUndo(ERedoUndoUnit* unit);
 
-	template<ERedoUndoComponent::Type T>
-	void add(ERedoUndoUnit* unit);
+	void beginRedo();
+	void addRedo(ERedoUndoUnit* unit);
 
-	void releaseUndo();
-	void releaseRedo();
+	bool releaseUndo();
+	ERedoUndoUnit* getUndo();
+	void removeUndo();
+	bool releaseRedo();
+	ERedoUndoUnit* getRedo();
+	void removeRedo();
+
+	void clearRedo();
 private:
-	std::list<ERedoUndoUnit*> undo;
-	std::list<ERedoUndoUnit*> redo;
+	std::list<std::stack<ERedoUndoUnit*>> undo;
+	std::list<std::stack<ERedoUndoUnit*>> redo;
 };
-
-template<ERedoUndoComponent::Type T>
-inline void ERedoUndoComponent::urInsert(const std::string& text)
-{
-	auto cursor = m_cursor;
-	auto count = insert(text);
-	add<T>(new ERedoUndoInsert(cursor, count));
-}
-
-template<ERedoUndoComponent::Type T>
-inline void ERedoUndoComponent::urErase()
-{
-	auto cursor = m_cursor;
-	auto sCursor = m_sCursor;
-	auto text = sErase();
-	add<T>(new ERedoUndoErase(cursor, sCursor, text));
-}
-
-template<ERedoUndoComponent::Type T>
-inline void ERedoUndoComponent::urErase(int count)
-{
-	auto cursor = m_cursor;
-	auto sCursor = m_sCursor;
-	auto text = sErase(count);
-	add<T>(new ERedoUndoErase(cursor, sCursor, text));
-}
-
-template<ERedoUndoComponent::Type T>
-inline void ERedoUndoComponent::add(ERedoUndoUnit* unit)
-{
-	if(T == ERedoUndoComponent::Type::Undo) undo.push_back(unit);
-	else if (T == ERedoUndoComponent::Type::Redo) redo.push_back(unit);
-}

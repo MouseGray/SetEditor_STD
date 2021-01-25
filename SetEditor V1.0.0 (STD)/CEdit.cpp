@@ -182,16 +182,16 @@ void CEdit::W_MouseWheel(int delta)
 
 void CEdit::W_Backspace()
 {
-	if (isSelected()) urErase<ERedoUndoComponent::Type::Undo>();
-	else urErase<ERedoUndoComponent::Type::Undo>(-1);
+	if (isSelected()) erase();
+	else erase(-1);
 	SetCaretPosition();
 	Update();
 }
 
 void CEdit::W_Delete()
 {
-	if (isSelected()) urErase<ERedoUndoComponent::Type::Undo>();
-	else urErase<ERedoUndoComponent::Type::Undo>(1);
+	if (isSelected()) erase();
+	else erase(1);
 	SetCaretPosition();
 	Update();
 }
@@ -355,7 +355,7 @@ void CEdit::_Erase(size_t off, size_t count)
 	if (!tempSegments.empty()) this->segments.erase(this->segments.begin() + startPos_S, this->segments.begin() + startPos_S + tempSegments.size());
 
 	//undo.back().top().CreateRemove(m_cursor, m_sCursor, startPos_S, m_buffer.substr(off, count), vector<int>(codes.begin() + off, codes.begin() + off + count), tempSegments);
-	urErase<ERedoUndoComponent::Type::Undo>(off);
+	erase(count);
 	
 	//this->m_buffer.erase(this->m_buffer.begin() + off, this->m_buffer.begin() + off + count);
 	//this->codes.erase(this->codes.begin() + off, this->codes.begin() + off + count);
@@ -387,7 +387,7 @@ void CEdit::_Insert(size_t off, const string& text, const vector<int>& codes)
 	this->segments.insert(this->segments.begin() + startPos_S, count, Segment());
 
 	//undo.back().top().CreateAdd(m_cursor, m_sCursor, startPos_S, text.size(), count);
-	urInsert<ERedoUndoComponent::Type::Undo>(text);
+	insert(text);
 	//this->m_buffer.insert(this->m_buffer.begin() + off, text.begin(), text.end());
 	//this->codes.insert(this->codes.begin() + off, codes.begin(), codes.end());
 }
@@ -520,7 +520,7 @@ bool CEdit::ToNext()
 
 void CEdit::ToBack()
 {
-	releaseUndo();
+	EFace::undo();
 	// if (undo.empty()) return;
 	/*while (!undo.back().empty())
 	{
