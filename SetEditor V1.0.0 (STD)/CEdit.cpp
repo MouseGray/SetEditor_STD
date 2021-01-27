@@ -21,6 +21,11 @@ void CEdit::W_Size(int w, int h)
 	SelectObject(hDC, hBM);
 	ReleaseDC(hWnd, tempHDC);
 
+	BITMAP Bitmap;
+	GetObject(hBM, sizeof(BITMAP), &Bitmap);
+	auto nmSize = Bitmap.bmWidth * Bitmap.bmHeight * Bitmap.bmBitsPixel;
+
+
 	pageWidth_P = w;
 	pageHeight_P = h;
 
@@ -110,6 +115,7 @@ void CEdit::W_MouseMove(int x, int y, bool shift)
 {
 	int tempCaretPos_U;
 	bool fact = GetUFromP(&tempCaretPos_U, x, y);
+	selected = select(tempCaretPos_U);
 	if (shift) {
 		if (tempCaretPos_U != m_cursor) {
 			m_cursor = tempCaretPos_U;
@@ -540,17 +546,49 @@ void CEdit::Cut()
 	SetCaretPosition();
 	Update();
 }
-
+#undef min
 void CEdit::Copy()
 {
-	bufferText = m_buffer.substr(min(m_cursor, m_sCursor), max(m_cursor, m_sCursor) - min(m_cursor, m_sCursor));
+	auto p = OpenClipboard(hWnd);
+	EmptyClipboard();
+	auto size = std::abs(m_sCursor - m_cursor);
+	auto start = std::min(m_cursor, m_sCursor);
+	auto hglbCopy = GlobalAlloc(GMEM_MOVEABLE, (size + 1) * sizeof(TCHAR));
+
+	LPSTR lptstrCopy = (LPSTR)GlobalLock(hglbCopy);
+	memcpy(lptstrCopy, &m_buffer[start], size * sizeof(TCHAR));
+	lptstrCopy[size] = '\0';
+	auto y = GlobalUnlock(hglbCopy);
+
+	auto er = GetLastError();
+
+	SetClipboardData(CF_TEXT, hglbCopy);
+
+	CloseClipboard();
+	//bufferText = m_buffer.substr(min(m_cursor, m_sCursor), max(m_cursor, m_sCursor) - min(m_cursor, m_sCursor));
 }
 
 void CEdit::Paste()
 {
-	EraseSelect();
+	auto p = OpenClipboard(hWnd);
+
+	auto hglb = GetClipboardData(CF_TEXT);
+	if (hglb != NULL)
+	{
+		auto lptstr = GlobalLock(hglb);
+		if (lptstr != NULL)
+		{
+			auto str = std::string(static_cast<TCHAR*>(hglb));
+			insert<>(str);
+			GlobalUnlock(hglb);
+		}
+	}
+	CloseClipboard();
+
+
+	/*EraseSelect();
 	m_cursor = m_sCursor = m_cursor + Insert(m_cursor, bufferText, vector<int>(bufferText.size(), 0));
-	SetCaretPosition();
+	SetCaretPosition();*/
 	Update();
 }
 
@@ -568,7 +606,7 @@ void CEdit::SetOverline()
 	//_Erase(min(m_cursor, m_sCursor), max(m_cursor, m_sCursor) - min(m_cursor, m_sCursor));
 	//_Insert(min(m_cursor, m_sCursor), text, codes);
 	//m_cursor = m_sCursor = min(m_cursor, m_sCursor);
-	UpdateOverline();
+	//UpdateOverline();
 	Update();
 }
 
@@ -867,6 +905,7 @@ void CEdit::Update()
 {
 	if (!hDC) return;
 
+
 	SelectObject(hDC, font);
 	SetBkMode(hDC, TRANSPARENT);
 	SetTextColor(hDC, RGB(0, 0, 0));
@@ -931,7 +970,8 @@ void CEdit::Update()
 
 			subCharRect = charRect;
 			subCharRect.bottom -= charHeight_P;
-			FillRect(hDC, &subCharRect, hWBrush);
+			if (curPos_U >= selected[0] && curPos_U <= selected[1]) FillRect(hDC, &subCharRect, hRBrush);
+			else FillRect(hDC, &subCharRect, hWBrush);
 
 			if (m_buffer[curPos_U] == '=') {
 				if (!segments[curSegment].operation) SetTextColor(hDC, RGB(200, 200, 200));
@@ -982,6 +1022,7 @@ void CEdit::Update()
 
 		charRect.left += curCharWidth_P;
 	}
+
 	DeleteObject(pen);
 	DeleteObject(hWBrush);
 	DeleteObject(hRBrush);
@@ -1210,5 +1251,18 @@ void CEdit::Save(string fileName)
 	out.write((char*)&endSelectPos, sizeof(endSelectPos));
 
 	out.close();
+}
+
+std::vector<int> CEdit::getMetric()
+{
+	std::vector<int> result;
+	result.reserve(m_buffer.size());
+	for(auto ch: m_buffer)
+	{
+
+	}
+
+
+	return std::vector<int>();
 }
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ESelectComponent.h"
+#include "EConnectComponent.h"
 
-class EFace : public EControlComponent
+class EFace : public EConnectComponent
 {
 public:
 	template<ERedoUndoComponent::Type T = ERedoUndoComponent::Type::Null>

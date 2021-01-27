@@ -177,6 +177,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="DATLib.cpp" />
+    <ClCompile Include="EConnectComponent.cpp" />
     <ClCompile Include="EFace.cpp" />
     <ClCompile Include="EOverlineComponent.cpp" />
     <ClCompile Include="ESelectComponent.cpp" />
@@ -204,6 +205,7 @@
     <ClInclude Include="Controls.h" />
     <ClInclude Include="CTable.h" />
     <ClInclude Include="DATLib.h" />
+    <ClInclude Include="EConnectComponent.h" />
     <ClInclude Include="EFace.h" />
     <ClInclude Include="EOverlineComponent.h" />
     <ClInclude Include="ESelectComponent.h" />

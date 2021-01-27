@@ -62,9 +62,9 @@ public:
 	{
 		auto urUnit = new ERedoUndoEraseOverline();
 		urUnit->startPos = startPos;
-		urUnit->endPos = endPos;
-		m_buffer.erase(startPos, 1);
+		urUnit->endPos = endPos - 1;
 		m_buffer.erase(endPos, 1);
+		m_buffer.erase(startPos, 1);
 		add<T>(urUnit);
 		return true;
 	}

@@ -4,11 +4,12 @@
 
 #include <Windows.h>
 
+#include <algorithm>
 
 #include <stack>
 #include <deque>
 #include <fstream>
-
+#include <array>
 
 
 #include "CheckSyntax.h"
@@ -193,10 +194,14 @@ public:
 	void Load(string fileName);
 	void Save(string fileName);
 
+	std::vector<int> getMetric();
+
 	vector<Segment> segments;
 	void (*SegmentEditCallback)(Segment*, int, int) = nullptr;
 	void (*ShowTipCallback)(HWND, int, int, int, Segment*) = nullptr;
 private:
+
+	std::array<int, 2> selected;
 	// Поля буфера
 	deque<stack<CAction>> undo;
 
