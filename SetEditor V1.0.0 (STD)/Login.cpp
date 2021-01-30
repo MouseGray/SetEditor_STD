@@ -577,7 +577,13 @@ LRESULT CALLBACK TAWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			edit.ShowTipCallback = *ShowTipCallback;
 
 			WND_Selector = CreateWindow("WNDSelector", "", WS_POPUP, CW_USEDEFAULT, CW_USEDEFAULT, 510, 320, 0, nullptr, 0, nullptr);
+
+			SetTimer(hWnd, 1, 30, nullptr);
 			break;
+		}
+		case WM_TIMER: 
+		{
+			edit.Update();
 		}
 		case  WM_GETDATA:
 		{
@@ -797,6 +803,14 @@ LRESULT CALLBACK TAWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 				{
 					if (GetKeyState(VK_CONTROL) & 0x8000) {
 						edit.Check();
+					}
+					break;
+				}
+				case 0x4E:
+				{
+					if (GetKeyState(VK_CONTROL) & 0x8000) {
+						if (edit.isStarted()) edit.completeConnection(edit.m_cursor);
+						else edit.addConnection(edit.m_cursor);
 					}
 					break;
 				}

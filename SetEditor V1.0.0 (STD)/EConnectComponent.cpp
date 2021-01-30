@@ -1,5 +1,23 @@
 #include "EConnectComponent.h"
 
+void EConnectComponent::addConnection(int pos)
+{
+    m_connections.emplace_back(pos, -1);
+    m_isStarted = true;
+}
+
+void EConnectComponent::completeConnection(int pos)
+{
+    m_connections.back().second = pos;
+    m_isStarted = false; 
+}
+
+void EConnectComponent::cancelConnection()
+{
+    m_connections.pop_back();
+    m_isStarted = false;
+}
+
 std::array<int, 2> EConnectComponent::select(int pos)
 {
     if (isLiteral(pos)) return { pos, pos + 1 };

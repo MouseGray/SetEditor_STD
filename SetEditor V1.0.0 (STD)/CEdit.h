@@ -1,9 +1,9 @@
 #pragma once
 
 #include "EFace.h"
-
+#define byte win_byte
 #include <Windows.h>
-
+#undef byte
 #include <algorithm>
 
 #include <stack>
@@ -11,6 +11,7 @@
 #include <fstream>
 #include <array>
 
+#include "EMetricsSheet.h"
 
 #include "CheckSyntax.h"
 #include "LineNum.h"
@@ -45,76 +46,18 @@ struct Segment
 	vector<int> pointers;
 };
 
-class CAction
-{
-public:
-	void CreateAdd(size_t caretPos, size_t selectPos, size_t segmentPos, size_t count, size_t segmentLength)
-	{
-		this->actionID = ACTION_ADD;
-		this->caretPos = caretPos;
-		this->selectPos = selectPos;
-		this->segmentPos = segmentPos;
-		this->count = count;
-		this->segmentLength = segmentLength;
-	}
-	void CreateRemove(size_t caretPos, size_t selectPos, size_t segmentPos, const string& text, const vector<int>& codes, const vector<Segment>& segments)
-	{
-		this->actionID = ACTION_REMOVE;
-		this->caretPos = caretPos;
-		this->selectPos = selectPos;
-		this->segmentPos = segmentPos;
-		this->text = text;
-		this->codes = codes;
-		this->segments = segments;
-	}
-	void Release(string* text, vector<int>* codes, size_t* caretPos, size_t* selectPos, vector<Segment>* segments)
-	{
-		switch (actionID)
-		{
-			case ACTION_ADD:
-				ReleaseAdd(text, codes, segments);
-				break;
-			case ACTION_REMOVE:
-				ReleaseRemove(text, codes, segments);
-				break;
-			default:
-
-				break;
-		}
-		*caretPos = this->caretPos;
-		*selectPos = this->selectPos;
-	}
-private:
-	void ReleaseAdd(string* text, vector<int>* codes, vector<Segment>* segments)
-	{
-		text->erase(text->begin() + caretPos, text->begin() + caretPos + count);
-		codes->erase(codes->begin() + caretPos, codes->begin() + caretPos + count);
-		if (segmentLength) segments->erase(segments->begin() + segmentPos, segments->begin() + segmentPos + segmentLength);
-	}
-	void ReleaseRemove(string* text, vector<int>* codes, vector<Segment>* segments)
-	{
-		text->insert(text->begin() + min(caretPos, selectPos), this->text.begin(), this->text.end());
-		codes->insert(codes->begin() + min(caretPos, selectPos), this->codes.begin(), this->codes.end());
-		if(!this->segments.empty()) segments->insert(segments->begin() + segmentPos, this->segments.begin(), this->segments.end());
-	}
-
-	__int8 actionID = ACTION_DEFAULT;
-
-	size_t caretPos = 0;
-	size_t selectPos = 0;
-
-	size_t count = 0;
-	string text;
-	vector<int> codes;
-
-	size_t segmentPos = 0;
-	size_t segmentLength = 0;
-	vector<Segment> segments;
+struct Row {
+	size_t start = 0; 
+	size_t end = 0;
+	int height = 0;
+	int width = 0;
 };
 
-class CEdit : public EFace
+class CEdit : public EFace, public IEMetricsSheet
 {
 public:
+	CEdit();
+
 	// Команды окна
 	void W_Create(HWND hWnd);
 	void W_Size(int w, int h);
@@ -194,16 +137,23 @@ public:
 	void Load(string fileName);
 	void Save(string fileName);
 
-	std::vector<int> getMetric();
+	////////////////////////////////////////////////////
+	void drawSelect();
+	void drawConnections();
+	////////////////////////////////////////////////////
+
+	int lineHeight() { return lineHeight_P; }
+	int charWidth(const char c) { if (c == '{' || c == '}' || c == '\n') return 0; return charWidth_P; }
+	int pageWidth() { return pageWidth_P; }
 
 	vector<Segment> segments;
 	void (*SegmentEditCallback)(Segment*, int, int) = nullptr;
 	void (*ShowTipCallback)(HWND, int, int, int, Segment*) = nullptr;
 private:
 
+	EMetricsSheet m_metrics;
+
 	std::array<int, 2> selected;
-	// Поля буфера
-	deque<stack<CAction>> undo;
 
 	string bufferText;
 	// Поля управления
@@ -215,6 +165,7 @@ private:
 	int charHeight_P = 0;
 
 	int charOffset_P = 0;
+
 	int lineHeight_P = 1;
 
 	int pageOffset_U = 0;
@@ -232,4 +183,6 @@ private:
 	HBITMAP hBM = nullptr;
 
 	HFONT font = nullptr;
+
+	HBRUSH selectBrush = nullptr;
 };

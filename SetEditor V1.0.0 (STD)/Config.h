@@ -1,5 +1,7 @@
 #pragma once
+#define byte win_byte
 #include <Windows.h>
+#undef byte
 #include <string>
 
 using namespace std;

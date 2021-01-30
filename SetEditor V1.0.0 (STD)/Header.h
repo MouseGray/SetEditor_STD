@@ -1,7 +1,9 @@
 #pragma once
 #pragma comment(lib, "Msimg32.lib")
 
+#define byte win_byte
 #include <Windows.h>
+#undef byte
 #include <CommCtrl.h>
 //#include <windowsx.h>
 #include <vector>

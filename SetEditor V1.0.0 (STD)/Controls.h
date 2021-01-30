@@ -2,7 +2,9 @@
 #ifndef _CONTROLS_
 #define _CONTROLS_
 // ======================================== |Includes| ======================================== //
+#define byte win_byte
 #include <Windows.h>
+#undef byte
 #include <vector>
 #include <string>
 

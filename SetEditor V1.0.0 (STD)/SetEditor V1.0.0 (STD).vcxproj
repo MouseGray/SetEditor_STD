@@ -83,7 +83,7 @@
       <Optimization>Disabled</Optimization>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -109,7 +109,7 @@
       <Optimization>Disabled</Optimization>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -132,7 +132,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Program Files %28x86%29\MySQL\MySQL Server 5.7\include;C:\Program Files %28x86%29\MySQL\Connector C++ 8.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -153,7 +153,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Program Files %28x86%29\MySQL\MySQL Server 5.7\include;C:\Program Files %28x86%29\MySQL\Connector C++ 8.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -178,7 +178,10 @@
     </ClCompile>
     <ClCompile Include="DATLib.cpp" />
     <ClCompile Include="EConnectComponent.cpp" />
+    <ClCompile Include="EErrorComponent.cpp" />
     <ClCompile Include="EFace.cpp" />
+    <ClCompile Include="ELabelComponent.cpp" />
+    <ClCompile Include="EMetricsSheet.cpp" />
     <ClCompile Include="EOverlineComponent.cpp" />
     <ClCompile Include="ESelectComponent.cpp" />
     <ClCompile Include="ERedoUndoComponent.cpp" />
@@ -206,11 +209,15 @@
     <ClInclude Include="CTable.h" />
     <ClInclude Include="DATLib.h" />
     <ClInclude Include="EConnectComponent.h" />
+    <ClInclude Include="EErrorComponent.h" />
     <ClInclude Include="EFace.h" />
+    <ClInclude Include="ELabelComponent.h" />
+    <ClInclude Include="EMetricsSheet.h" />
     <ClInclude Include="EOverlineComponent.h" />
     <ClInclude Include="ESelectComponent.h" />
     <ClInclude Include="ERedoUndoComponent.h" />
     <ClInclude Include="ERedoUndoUnit.h" />
+    <ClInclude Include="ETextChangeTrigger.h" />
     <ClInclude Include="ETextComponent.h" />
     <ClInclude Include="Header.h" />
     <ClInclude Include="DATerm.h" />
