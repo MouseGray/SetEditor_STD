@@ -24,13 +24,13 @@ std::string EOverlineComponent::toCorrectOverline(const std::string& text)
 int EOverlineComponent::findOverlineEnd(int pos)
 {
     auto overlineLvl = 0;
-    auto size = static_cast<int>(m_buffer.size());
+    auto size = static_cast<int>(data().size());
     for (int i = pos; i < size; i++) {
-        if (m_buffer[i] == '{') overlineLvl++;
-        if (m_buffer[i] == '}') {
+        if (data()[i] == '{') overlineLvl++;
+        if (data()[i] == '}') {
             overlineLvl--;
             if (overlineLvl == 0) return i; 
         }
     }
-    return m_buffer.size();
+    return data().size();
 }

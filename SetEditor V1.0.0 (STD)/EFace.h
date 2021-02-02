@@ -2,9 +2,34 @@
 
 #include "EConnectComponent.h"
 
-class EFace : public EConnectComponent
+#include "EErrorComponent.h"
+
+class EFace : public EErrorComponent
 {
+protected:
 public:
+	EFace() {
+		ETextComponent::addCallback(std::bind(&EControlComponent::erased, this, std::placeholders::_1, std::placeholders::_2, 
+			std::placeholders::_3), ETextComponent::CallbackType::erase);
+		ETextComponent::addCallback(std::bind(&EControlComponent::inserted, this, std::placeholders::_1, std::placeholders::_2, 
+			std::placeholders::_3), ETextComponent::CallbackType::insert);
+
+		ETextComponent::addCallback(std::bind(&ELabelComponent::erased, this, std::placeholders::_1, std::placeholders::_2,
+			std::placeholders::_3), ETextComponent::CallbackType::erase);
+		ETextComponent::addCallback(std::bind(&ELabelComponent::erasedLines, this, std::placeholders::_1, std::placeholders::_2, 
+			std::placeholders::_3), ETextComponent::CallbackType::eraseLine);
+		ETextComponent::addCallback(std::bind(&ELabelComponent::insertedLines, this, std::placeholders::_1, std::placeholders::_2,
+			std::placeholders::_3), ETextComponent::CallbackType::insertLine);
+
+		ETextComponent::addCallback(std::bind(&EErrorComponent::erased, this, std::placeholders::_1, std::placeholders::_2,
+			std::placeholders::_3), ETextComponent::CallbackType::erase);
+
+		ETextComponent::addCallback(std::bind(&EConnectComponent::erased, this, std::placeholders::_1, std::placeholders::_2,
+			std::placeholders::_3), ETextComponent::CallbackType::erase);
+		ETextComponent::addCallback(std::bind(&EConnectComponent::inserted, this, std::placeholders::_1, std::placeholders::_2,
+			std::placeholders::_3), ETextComponent::CallbackType::insert);
+	}
+
 	template<ERedoUndoComponent::Type T = ERedoUndoComponent::Type::Null>
 	void insert(const std::string& text);
 
@@ -17,8 +42,7 @@ public:
 	template<ERedoUndoComponent::Type T = ERedoUndoComponent::Type::Null>
 	void setOverline();
 
-	void undo();
-	void redo();
+	void release(ERedoUndoComponent::Type ruType);
 };
 
 #undef min
@@ -28,33 +52,37 @@ template<ERedoUndoComponent::Type T>
 void EFace::insert(const std::string& text)
 {
 	if (text.size() == 0) return;
-	begin<T>();
-	auto count = ETextComponent::insert<T>(m_cursor, text);
-	if (count == 0) release<T>();
-	EControlComponent::moveTo<T>(m_cursor + count, m_cursor + count);
-	ERedoUndoComponent::clearRedo<T>();
+	startUndo(T);
+	ETextComponent::insert(m_cursor, text, T);
+	finishUndo(T);
+
+	clearRedo(T);
 }
 
 template<ERedoUndoComponent::Type T>
 void EFace::erase()
 {
 	if (!isSelected()) return;
-	auto pos = std::min(m_cursor, m_sCursor);
-	begin<T>();
-	if (!EOverlineComponent::erase_<T>(pos, std::abs(m_sCursor - m_cursor))) release<T>();
-	EControlComponent::moveTo<T>(pos, pos);
-	ERedoUndoComponent::clearRedo<T>();
+	auto begin = std::min(m_cursor, m_sCursor);
+	auto end   = std::max(m_cursor, m_sCursor);
+	startUndo(T);
+	EOverlineComponent::erase_<T>(begin, end);
+	finishUndo(T);
+
+	clearRedo(T);
 }
 
 template<ERedoUndoComponent::Type T>
 void EFace::erase(int count)
 {
 	if (count == 0) return;
-	auto pos = std::min(m_cursor, m_cursor + count);
-	begin<T>();
-	if (!EOverlineComponent::erase_<T>(pos, std::abs(count))) release<T>();
-	EControlComponent::moveTo<T>(pos, pos);
-	ERedoUndoComponent::clearRedo<T>();
+	auto begin = std::min(m_cursor, m_cursor + count);
+	auto end   = std::max(m_cursor, m_cursor + count);
+	startUndo(T);
+	EOverlineComponent::erase_<T>(begin, end);
+	finishUndo(T);
+
+	clearRedo(T);
 }
 
 template<ERedoUndoComponent::Type T>
@@ -63,8 +91,9 @@ void EFace::setOverline()
 	if (!isSelected()) return;
 	auto start = std::min(m_cursor, m_sCursor);
 	auto end = std::max(m_cursor, m_sCursor);
-	begin<T>();
+	startUndo(T);
 	EOverlineComponent::insertOverline<T>(start, end);
-	EControlComponent::moveTo<T>(start, start);
-	ERedoUndoComponent::clearRedo<T>();
+	finishUndo(T);
+
+	clearRedo(T);
 }

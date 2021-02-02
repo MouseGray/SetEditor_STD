@@ -1,5 +1,10 @@
 #include "ELabelComponent.h"
 
+ELabelComponent::ELabelComponent()
+{
+	m_lineNumbers.push_back(-1);
+}
+
 void ELabelComponent::addLabel(size_t pos, char value)
 {
 	auto front = std::lower_bound(m_labels.begin(), m_labels.end(), pos, ::pair_comparator<char>);
@@ -23,27 +28,44 @@ void ELabelComponent::removeLabel(size_t pos)
 	m_labels.erase(el);
 }
 
-void ELabelComponent::erased(size_t begin, size_t end)
+void ELabelComponent::insertLabels(size_t begin, std::vector<std::pair<size_t, char>>& data, ERedoUndoComponent::Type ruType)
 {
-	::erased(m_labels, begin, end);
+	m_labels.insert(m_labels.begin() + begin, data.begin(), data.end());
+
+	auto unit = new ERedoUndoInsertLabel();
+	unit->begin = begin;
+	unit->end = begin + data.size();
+	add(unit, ruType);
 }
 
-void ELabelComponent::inserted(size_t pos, int count)
+void ELabelComponent::erased(size_t begin, size_t end, ERedoUndoComponent::Type ruType)
 {
-	::inserted(m_labels, pos, count);
+	auto unit = ::erased<ERedoUndoEraseLabel>(m_labels, begin, end);
+	if (unit == nullptr) return;
+	add(unit, ruType);
 }
 
-void ELabelComponent::eraseLines(size_t begin, size_t end)
+void ELabelComponent::erasedLines(size_t begin, size_t end, ERedoUndoComponent::Type ruType)
 {
-	m_lineNumers.erase(m_lineNumers.begin() + begin, m_lineNumers.begin() + end);
+	auto unit = new ERedoUndoEraseLineNumber();
+	unit->begin = begin;
+	unit->data.insert(unit->data.begin(), m_lineNumbers.begin() + begin, m_lineNumbers.begin() + end);
+
+	m_lineNumbers.erase(m_lineNumbers.begin() + begin, m_lineNumbers.begin() + end);
+	add(unit, ruType);
 }
 
-void ELabelComponent::insertLines(size_t pos, std::vector<int>& values)
+void ELabelComponent::insertedLines(size_t begin, size_t end, ERedoUndoComponent::Type ruType)
 {
-	m_lineNumers.insert(m_lineNumers.begin() + pos, values.begin(), values.end());
+	m_lineNumbers.insert(m_lineNumbers.begin() + begin, end - begin, -1);
 }
 
-void ELabelComponent::insertLines(size_t pos, int count)
+void ELabelComponent::setLines(size_t begin, std::vector<int>& data, ERedoUndoComponent::Type ruType)
 {
-	m_lineNumers.insert(m_lineNumers.begin() + pos, count, -1);
+	std::copy(data.begin(), data.end(), m_lineNumbers.begin() + begin);
+
+	auto unit = new ERedoUndoInsertLineNumber();
+	unit->begin = begin;
+	unit->end = begin + data.size();
+	add(unit, ruType);
 }

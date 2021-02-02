@@ -1,5 +1,9 @@
 #pragma once
 
+#include <ranges>
+#include <cassert>
+#include <algorithm>
+
 #include "ETextComponent.h"
 
 class EOverlineComponent : public ETextComponent
@@ -9,64 +13,57 @@ public:
 
 	int findOverlineEnd(int pos);
 
-	template<ERedoUndoComponent::Type T>
-	bool erase_(int pos, int count)
+	template<typename T>
+	T findOverlineEnd(T begin, T end)
 	{
-		auto end = pos + count;
-		auto start = pos;
-		auto result = false;
-		for (auto i = pos; i < end; i++) {
-			if (m_buffer[i] == '{') 
-			{
-				auto _end = findOverlineEnd(i);
-				eraseOverline<T>(i, _end);
-				if (_end < end) end--;
-				end--;
-				i--;
-				result = true;
-				continue;
-			}
-			if (m_buffer[i] == '}')
-			{
-				auto count = i - start;
-				if (count > 0) {
-					result = true;
-					erase<T>(start++, count);
-					i -= count;
-					end -= count;
-				}
-				continue;
+		auto overlineLvl = 0;
+		for (; begin != end; begin++)
+		{
+			if (*begin == '{') overlineLvl++;
+			if (*begin == '}') {
+				overlineLvl--;
+				if (overlineLvl == 0) break;
 			}
 		}
-		auto _count = end - start;
-		if (_count > 0) {
-			result = true;
-			erase<T>(start, _count);
-		}
-		return result;
+		return begin;
 	}
 
 	template<ERedoUndoComponent::Type T>
-	void insertOverline(int startPos, int endPos)
-	{
-		auto urUnit = new ERedoUndoInsertOverline();
-		urUnit->startPos = startPos;
-		urUnit->endPos = endPos;
-		m_buffer.insert(endPos, std::string("}"));
-		m_buffer.insert(startPos, std::string("{"));
-		add<T>(urUnit);
+	void erase_(size_t startPos, size_t endPos)
+	{		
+		while (true)
+		{
+			auto overlineStart = std::find(begin() + startPos, begin() + endPos, '{');
+			if (overlineStart == data().begin() + endPos) break;
+			auto overlineEnd = findOverlineEnd(overlineStart, end());
+			assert(overlineEnd != data().end());
+			if (std::distance(begin(), overlineEnd) < endPos) endPos--;
+			startPos = std::distance(begin(), overlineStart);
+			auto local_end = std::distance(begin(), overlineEnd);
+			/*ru_erase*/
+			eraseOverline<T>(startPos, local_end);
+			endPos--;
+		}
+		auto nCloseOverline = std::count(data().begin() + startPos, data().begin() + endPos, '}');
+		if (nCloseOverline == endPos - startPos) return;
+
+		erase(startPos, endPos, T);
+
+		insert(startPos, std::string(nCloseOverline, '}'), T);
 	}
 
 	template<ERedoUndoComponent::Type T>
-	bool eraseOverline(int startPos, int endPos)
+	void insertOverline(size_t startPos, size_t endPos)
 	{
-		auto urUnit = new ERedoUndoEraseOverline();
-		urUnit->startPos = startPos;
-		urUnit->endPos = endPos - 1;
-		m_buffer.erase(endPos, 1);
-		m_buffer.erase(startPos, 1);
-		add<T>(urUnit);
-		return true;
+		insert(endPos, std::string("}"), T);
+		insert(startPos, std::string("{"), T);
+	}
+
+	template<ERedoUndoComponent::Type T>
+	void eraseOverline(size_t startPos, size_t endPos)
+	{
+		erase(endPos, T);
+		erase(startPos, T);
 	}
 };
 

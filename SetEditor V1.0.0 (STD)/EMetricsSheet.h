@@ -39,8 +39,46 @@ public:
 
 	int getLineIndex(size_t pos) {
 		for (size_t i = 0; i < m_linesData.size(); i++) 
+			if (m_linesData[i].front <= pos && m_linesData[i].back > pos) return i;
+		return m_linesData.size() - 1;
+	}
+
+	int getLineIndex2(size_t pos) {
+		for (int i = static_cast<int>(m_linesData.size()) - 1; i >= 0; i--) {
 			if (m_linesData[i].front <= pos && m_linesData[i].back >= pos) return i;
+		}
 		return -1;
+	}
+
+	std::vector<std::tuple<int, int, int>> getConnectLines(size_t first, size_t last)
+	{
+		auto startLine = getLineIndex(first);
+		auto endLine = getLineIndex(last);
+
+		auto result = std::vector<std::tuple<int, int, int>>();
+
+		if (startLine == endLine) {
+			auto start = m_positionData[first];
+			auto end = last + 1 < m_linesData[startLine].back ? m_positionData[last + 1] : m_linesData[startLine].width;
+			result.push_back(std::make_tuple(start, end, m_linesData[startLine].height + 28));
+		}
+		else {
+			auto start = m_positionData[first];
+			auto end = m_linesData[startLine].width;
+
+			result.push_back(std::make_tuple(start, end, m_linesData[startLine].height + 28));
+
+			for (auto i = startLine + 1; i < endLine; i++) {
+				start = 0;
+				end = m_linesData[i].width;
+				result.push_back(std::make_tuple(start, end, m_linesData[i].height + 28));
+			}
+
+			start = 0;
+			end = last < m_linesData[endLine].back ? m_positionData[last] : m_linesData[endLine].width;;
+			result.push_back(std::make_tuple(start, end, m_linesData[endLine].height + 28));
+		}
+		return result;
 	}
 
 	std::vector<Rect> getAreas(size_t startPos, size_t endPos)
@@ -78,6 +116,7 @@ public:
 		if (data.empty()) {
 			m_positionData.clear();
 			m_linesData.clear();
+			m_positionData.push_back(0);
 			m_linesData.push_back({ 0, 0, 0, 0 });
 			return;
 		}
@@ -121,7 +160,8 @@ public:
 			m_positionData.push_back(startChar);
 			startChar = endChar;
 		}
-		if (startRow == index) return;
+		//if (startRow == index) return;
+		m_positionData.push_back(startChar);
 		m_linesData.push_back({ startRow, index, height, startChar });
 	}
 };

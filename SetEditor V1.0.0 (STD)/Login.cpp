@@ -755,6 +755,14 @@ LRESULT CALLBACK TAWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 						break;
 					}
 				}
+				case 0x59:
+				{
+					if (GetKeyState(VK_CONTROL) & 0x8000)
+					{
+						edit.ToFront();
+						break;
+					}
+				}
 				case 0x43:
 				{
 					if (GetKeyState(VK_CONTROL) & 0x8000)
@@ -806,11 +814,18 @@ LRESULT CALLBACK TAWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 					}
 					break;
 				}
-				case 0x4E:
+				case 0x4E: // N
 				{
 					if (GetKeyState(VK_CONTROL) & 0x8000) {
 						if (edit.isStarted()) edit.completeConnection(edit.m_cursor);
 						else edit.addConnection(edit.m_cursor);
+					}
+					break;
+				}
+				case 0x4D: // M
+				{
+					if (GetKeyState(VK_CONTROL) & 0x8000) {
+						edit.removeConnection(edit.m_cursor);
 					}
 					break;
 				}

@@ -7,16 +7,33 @@ class EControlComponent : public EOverlineComponent
 public:
 	inline void removeSelect();
 	bool isSelected();
+	
+	void inserted(size_t begin, size_t end, ERedoUndoComponent::Type ruType)
+	{
+		auto urUnit = new ERedoUndoCursor();
+		urUnit->cursor = m_cursor;
+		urUnit->sCursor = m_sCursor;
+		m_cursor = m_sCursor = end;
+		add(urUnit, ruType);
+	}
 
-	template <ERedoUndoComponent::Type T>
-	void moveTo(int cursor, int sCursor)
+	void erased(size_t begin, size_t end, ERedoUndoComponent::Type ruType)
+	{
+		auto urUnit = new ERedoUndoCursor();
+		urUnit->cursor = m_cursor;
+		urUnit->sCursor = m_sCursor;
+		m_cursor = m_sCursor = begin;
+		add(urUnit, ruType);
+	}
+
+	void moveTo(int cursor, int sCursor, ERedoUndoComponent::Type ruType)
 	{
 		auto urUnit = new ERedoUndoCursor();
 		urUnit->cursor = m_cursor;
 		urUnit->sCursor = m_sCursor;
 		m_cursor = cursor;
 		m_sCursor = sCursor;
-		add<T>(urUnit);
+		add(urUnit, ruType);
 	}
 
 	void setSelectCursorPos(size_t pos) noexcept;

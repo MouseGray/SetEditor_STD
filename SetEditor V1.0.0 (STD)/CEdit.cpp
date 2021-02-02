@@ -4,13 +4,15 @@ CEdit::CEdit() : m_metrics(this)
 {
 	selectBrush = CreateSolidBrush(RGB(0, 255, 0));
 
-	m_metrics.update(0, m_buffer);
+	m_metrics.update(0, data());
 
 	HDC tempHDC = GetDC(hWnd);
 	hDC = CreateCompatibleDC(tempHDC);
 	hBM = CreateCompatibleBitmap(tempHDC, 2000, 1000);
 	SelectObject(hDC, hBM);
 	ReleaseDC(hWnd, tempHDC);
+
+	lineNumberOffset_P = 40;
 }
 
 void CEdit::W_Create(HWND hWnd)
@@ -34,7 +36,7 @@ void CEdit::W_Size(int w, int h)
 	SelectObject(hDC, hBM);
 	ReleaseDC(hWnd, tempHDC);*/
 
-	pageWidth_P = w;
+	pageWidth_P = w - lineNumberOffset_P;
 	pageHeight_P = h;
 
 	textWidth_P = pageWidth_P - textOffset_P;
@@ -45,7 +47,7 @@ void CEdit::W_Size(int w, int h)
 	si.nPage = 1;
 	SetScrollInfo(hWnd, SB_VERT, &si, true);
 
-	m_metrics.update(0, m_buffer);
+	m_metrics.update(0, data());
 
 	UpdateScroll();
 	SetCaretPosition();
@@ -63,7 +65,7 @@ void CEdit::W_SetFont(HFONT font)
 
 	this->font = font;
 
-	m_metrics.update(0, m_buffer);
+	m_metrics.update(0, data());
 }
 
 void CEdit::W_LButtonDown(int x, int y, bool shift)
@@ -126,7 +128,7 @@ void CEdit::W_MouseMove(int x, int y, bool shift)
 {
 	int tempCaretPos_U;
 	bool fact = GetUFromP(&tempCaretPos_U, x, y);
-	selected = select(tempCaretPos_U);
+	//selected = select(tempCaretPos_U);
 	if (shift) {
 		if (tempCaretPos_U != m_cursor) {
 			m_cursor = tempCaretPos_U;
@@ -135,9 +137,9 @@ void CEdit::W_MouseMove(int x, int y, bool shift)
 		}
 	}
 	else {
-		if (fact && tempCaretPos_U < m_buffer.size())
+		if (fact && tempCaretPos_U < data().size())
 		{
-			if (m_buffer[tempCaretPos_U] == '=') {
+			if (data()[tempCaretPos_U] == '=') {
 				startSelectPos = GetLeftSelectU(tempCaretPos_U);
 				endSelectPos = GetRightSelectU(tempCaretPos_U);
 				POINT point = { x, y };
@@ -171,11 +173,11 @@ void CEdit::W_MouseWheel(int delta)
 
 	int curCharWidth_P = 0;
 
-	for (curPos_U = 0; curPos_U < m_buffer.size(); curPos_U++)
+	for (curPos_U = 0; curPos_U < data().size(); curPos_U++)
 	{
-		curCharWidth_P = GetCharWidthU(m_buffer[curPos_U]) * charWidth_P;
+		curCharWidth_P = GetCharWidthU(data()[curPos_U]) * charWidth_P;
 
-		if (curPosX_P + curCharWidth_P > textWidth_P || m_buffer[curPos_U] == '\n') {
+		if (curPosX_P + curCharWidth_P > textWidth_P || data()[curPos_U] == '\n') {
 			curPosX_P = 0;
 			curPosY_U++;
 		}
@@ -198,7 +200,7 @@ void CEdit::W_Backspace()
 	if (isSelected()) erase<>();
 	else erase<>(-1);
 	SetCaretPosition();
-	m_metrics.update(0, m_buffer);
+	m_metrics.update(0, data());
 }
 
 void CEdit::W_Delete()
@@ -206,7 +208,7 @@ void CEdit::W_Delete()
 	if (isSelected()) erase<>();
 	else erase<>(1);
 	SetCaretPosition();
-	m_metrics.update(0, m_buffer);
+	m_metrics.update(0, data());
 }
 
 void CEdit::W_Char(char c)
@@ -219,8 +221,8 @@ void CEdit::W_Char(char c)
 	Insert(m_cursor, character, vector<int>(1, 0));
 	m_sCursor = m_cursor;
 
+	m_metrics.update(0, data());
 	SetCaretPosition();
-	m_metrics.update(0, m_buffer);
 }
 
 void CEdit::W_Left(bool shift)
@@ -332,9 +334,9 @@ void CEdit::W_Scroll(int act, int pos)
 
 void CEdit::Erase(size_t off, size_t count)
 {
-	if (m_buffer[off] == '}') return;
+	if (data()[off] == '}') return;
 	AddUndo();
-	int overline = GetRemoveTextOverline(m_buffer.substr(off, count));
+	int overline = GetRemoveTextOverline(data().substr(off, count));
 	_Erase(off, count);
 	for (; overline > 0; overline--) {
 		_Insert(off, "}", vector<int>(1, 0));
@@ -356,7 +358,7 @@ void CEdit::_Erase(size_t off, size_t count)
 
 	//undo.back().top().CreateRemove(m_cursor, m_sCursor, startPos_S, m_buffer.substr(off, count), vector<int>(codes.begin() + off, codes.begin() + off + count), tempSegments);
 	erase(count);
-	m_metrics.update(0, m_buffer);
+	m_metrics.update(0, data());
 	//this->m_buffer.erase(this->m_buffer.begin() + off, this->m_buffer.begin() + off + count);
 	//this->codes.erase(this->codes.begin() + off, this->codes.begin() + off + count);
 }
@@ -387,7 +389,7 @@ void CEdit::_Insert(size_t off, const string& text, const vector<int>& codes)
 
 	//undo.back().top().CreateAdd(m_cursor, m_sCursor, startPos_S, text.size(), count);
 	insert(text);
-	m_metrics.update(0, m_buffer);
+	m_metrics.update(0, data());
 	//this->m_buffer.insert(this->m_buffer.begin() + off, text.begin(), text.end());
 	//this->codes.insert(this->codes.begin() + off, codes.begin(), codes.end());
 }
@@ -416,7 +418,7 @@ bool CEdit::ToLeft()
 
 bool CEdit::ToRight()
 {
-	if (m_cursor < m_buffer.size()) {
+	if (m_cursor < data().size()) {
 		m_cursor++;
 		return true;
 	}
@@ -519,18 +521,23 @@ bool CEdit::ToNext()
 
 void CEdit::ToBack()
 {
-	EFace::undo();
-	// if (undo.empty()) return;
-	/*while (!undo.back().empty())
-	{
-		undo.back().top().Release(&m_buffer, &codes, &m_cursor, &m_sCursor, &segments);
-		undo.back().pop();
-	}*/
+	EFace::release(ERedoUndoComponent::Type::Undo);
 
-	UpdateScroll();
+	//UpdateScroll();
+	m_metrics.update(0, data());
 	SetCaretPosition();
-	Update();
 }
+
+void CEdit::ToFront()
+{
+	EFace::release(ERedoUndoComponent::Type::Redo);
+
+	//UpdateScroll();
+	m_metrics.update(0, data());
+	SetCaretPosition();
+}
+
+
 
 void CEdit::Cut()
 {
@@ -549,7 +556,7 @@ void CEdit::Copy()
 	auto hglbCopy = GlobalAlloc(GMEM_MOVEABLE, (size + 1) * sizeof(TCHAR));
 
 	LPSTR lptstrCopy = (LPSTR)GlobalLock(hglbCopy);
-	memcpy(lptstrCopy, &m_buffer[start], size * sizeof(TCHAR));
+	memcpy(lptstrCopy, &data()[start], size * sizeof(TCHAR));
 	lptstrCopy[size] = '\0';
 	auto y = GlobalUnlock(hglbCopy);
 
@@ -600,7 +607,7 @@ void CEdit::SetOverline()
 	//_Insert(min(m_cursor, m_sCursor), text, codes);
 	//m_cursor = m_sCursor = min(m_cursor, m_sCursor);
 	//UpdateOverline();
-	m_metrics.update(0, m_buffer);
+	m_metrics.update(0, data());
 }
 
 void CEdit::Mark(int id)
@@ -653,11 +660,11 @@ void CEdit::UpdateScroll()
 
 	int curCharWidth_P = 0;
 
-	for (curPos_U = 0; curPos_U < m_buffer.size(); curPos_U++)
+	for (curPos_U = 0; curPos_U < data().size(); curPos_U++)
 	{
-		curCharWidth_P = GetCharWidthU(m_buffer[curPos_U]) * charWidth_P;
+		curCharWidth_P = GetCharWidthU(data()[curPos_U]) * charWidth_P;
 
-		if (curPosX_P + curCharWidth_P > textWidth_P || m_buffer[curPos_U] == '\n') {
+		if (curPosX_P + curCharWidth_P > textWidth_P || data()[curPos_U] == '\n') {
 			curPosX_P = 0;
 			curPosY_U++;
 		}
@@ -677,9 +684,9 @@ void CEdit::UpdateScroll()
 void CEdit::UpdateOverline()
 {
 	int overline = 0;
-	for (size_t i = 0; i < m_buffer.size(); i++) {
-		if (m_buffer[i] == '{') overline++;
-		if (m_buffer[i] == '}') {
+	for (size_t i = 0; i < data().size(); i++) {
+		if (data()[i] == '{') overline++;
+		if (data()[i] == '}') {
 			if (!overline) {
 				_Erase(i, 1);
 				i--;
@@ -687,7 +694,7 @@ void CEdit::UpdateOverline()
 			}
 			overline--;
 		}
-		if (m_buffer[i] == '=' || m_buffer[i] == '\n') {
+		if (data()[i] == '=' || data()[i] == '\n') {
 			for (; overline > 0; overline--) {
 				_Insert(i, "}", vector<int>(1, 0));
 				i++;
@@ -695,7 +702,7 @@ void CEdit::UpdateOverline()
 		}
 	}
 	for (; overline > 0; overline--) {
-		_Insert(m_buffer.size(), "}", vector<int>(1, 0));
+		_Insert(data().size(), "}", vector<int>(1, 0));
 	}
 }
 
@@ -748,9 +755,9 @@ int CEdit::GetRemoveTextOverline(const string& text)
 int CEdit::GetTextOverline(int start, int end)
 {
 	int overline = 0;
-	for (size_t i = 0; i < m_buffer.size(); i++) {
-		if (m_buffer[i] == '{') overline++;
-		if (m_buffer[i] == '}') overline--;
+	for (size_t i = 0; i < data().size(); i++) {
+		if (data()[i] == '{') overline++;
+		if (data()[i] == '}') overline--;
 	}
 	return overline;
 }
@@ -774,7 +781,7 @@ int CEdit::GetLeftSelectU(int pos_U)
 	{
 		pos_U--;
 		if (!pos_U) break;
-		if (m_buffer[pos_U] == '=' || m_buffer[pos_U] == '\n') {
+		if (data()[pos_U] == '=' || data()[pos_U] == '\n') {
 			pos_U++;
 			break;
 		}
@@ -784,13 +791,13 @@ int CEdit::GetLeftSelectU(int pos_U)
 
 int CEdit::GetRightSelectU(int pos_U)
 {
-	if (pos_U == m_buffer.size()) return pos_U;
+	if (pos_U == data().size()) return pos_U;
 
 	while (true)
 	{
 		pos_U++;
-		if (pos_U == m_buffer.size()) break;
-		if (m_buffer[pos_U] == '=' || m_buffer[pos_U] == '\n') break;
+		if (pos_U == data().size()) break;
+		if (data()[pos_U] == '=' || data()[pos_U] == '\n') break;
 	}
 	return pos_U;
 }
@@ -811,43 +818,22 @@ bool CEdit::GetUFromP(int* pos_U, const int posX_P, const int posY_P)
 {
 	auto row = std::min(posY_P/lineHeight_P, static_cast<int>(m_metrics.m_linesData.size()) - 1);
 
-	for (*pos_U = m_metrics.m_linesData[row].front; *pos_U < m_metrics.m_linesData[row].back; (*pos_U)++)
+	for (*pos_U = m_metrics.m_linesData[row].front; *pos_U <= m_metrics.m_linesData[row].back; (*pos_U)++)
 	{
 		if (m_metrics.m_positionData[*pos_U] > posX_P)
 		{
 			(*pos_U)--;
-			break;
+			return true;
 		}
 	}
-
+	(*pos_U)--;
 	return true;
 }
 
 void CEdit::GetPFromU(int* posX_P, int* posY_P, const int pos_U)
 {
-	int curPos_U = 0;
-
-	int curPosX_P = 0;
-	int curPosY_P = -pageOffset_U * lineHeight_P;
-
-	int curCharWidth_P = 0;
-
-	bool isLine = false;
-
-	for (curPos_U = 0; curPos_U < pos_U; curPos_U++)
-	{
-		curCharWidth_P = GetCharWidthU(m_buffer[curPos_U]) * charWidth_P;
-
-		if (curPosX_P + curCharWidth_P > textWidth_P || m_buffer[curPos_U] == '\n') {
-			curPosX_P = 0;
-			curPosY_P += lineHeight_P;
-		}
-
-		curPosX_P += curCharWidth_P;
-	}
-
-	*posX_P = curPosX_P;
-	*posY_P = curPosY_P;
+	*posX_P = m_metrics.m_positionData[pos_U];
+	*posY_P = m_metrics.m_linesData[m_metrics.getLineIndex(pos_U)].height;
 }
 
 struct color
@@ -886,7 +872,7 @@ void CEdit::drawConnections()
 {
 	for (auto a : m_connections)
 	{
-		auto border_1 = select(a.first);
+		auto border_1 = select(std::get<0>(a));
 
 		auto areas = m_metrics.getAreas(border_1.front(), border_1.back());
 		std::for_each(areas.begin(), areas.end(),
@@ -895,8 +881,8 @@ void CEdit::drawConnections()
 			FillRect(hDC, &r, selectBrush);
 		});
 
-		if (a.second == -1) continue;
-		auto border_2 = select(a.second);
+		if (std::get<1>(a) == -1) continue;
+		auto border_2 = select(std::get<1>(a));
 
 		areas = m_metrics.getAreas(border_2.front(), border_2.back());
 		std::for_each(areas.begin(), areas.end(),
@@ -904,6 +890,69 @@ void CEdit::drawConnections()
 			RECT r = { rect.right, rect.top, rect.left, rect.bottom };
 			FillRect(hDC, &r, selectBrush);
 		});
+
+		auto lines = m_metrics.getConnectLines(std::get<0>(a), std::get<1>(a));
+		std::for_each(lines.begin(), lines.end(),
+			[this](std::tuple<int, int, int>& el) {
+			MoveToEx(hDC, std::get<0>(el), std::get<2>(el), nullptr);
+			LineTo(hDC, std::get<1>(el), std::get<2>(el));
+		});
+	}
+}
+
+void CEdit::drawLineLabels()
+{
+	auto nLine = 0;
+	auto front = begin();
+	while (true)
+	{
+		auto back = std::find(front, end(), '\n');
+		if (back == end()) break;
+		auto frontLine = m_metrics.getLineIndex2(std::distance(begin(), front));
+		auto backLine = m_metrics.getLineIndex2(std::distance(begin(), back));
+
+		TextOut(hDC, pageWidth_P + (lineNumberOffset_P >> 1) - (charWidth_P >> 1), 
+			m_metrics.m_linesData[frontLine].height + 
+			((m_metrics.m_linesData[backLine].height + lineHeight_P - m_metrics.m_linesData[frontLine].height) >> 1)
+			- (lineHeight_P >> 1) + charOffset_P, to_string(lineNumber(nLine)).c_str(), 2);
+
+		front = back + 1;
+		nLine++;
+	}
+	auto frontLine = m_metrics.getLineIndex2(std::distance(begin(), front));
+	auto backLine = m_metrics.getLineIndex2(std::distance(begin(), end()));
+
+	TextOut(hDC, pageWidth_P + (lineNumberOffset_P >> 1) - (charWidth_P >> 1),
+		m_metrics.m_linesData[frontLine].height +
+		((m_metrics.m_linesData[backLine].height + lineHeight_P - m_metrics.m_linesData[frontLine].height) >> 1)
+		- (lineHeight_P >> 1) + charOffset_P, to_string(lineNumber(nLine)).c_str(), 2);
+}
+
+void CEdit::drawLabels()
+{
+	for (auto a : labels())
+	{
+		auto border_1 = select(std::get<0>(a));
+
+		auto areas = m_metrics.getAreas(border_1.front(), border_1.back());
+		std::for_each(areas.begin(), areas.end(),
+			[this](EMetricsSheet::Rect& rect) {
+			RECT r = { rect.right, rect.top, rect.left, rect.bottom };
+			FillRect(hDC, &r, selectBrush);
+		});
+		TextOut(hDC, areas.front().left, areas.front().top, &a.second, 1);
+	}
+}
+
+void CEdit::drawErrors()
+{
+	for (auto& el : errors())
+	{
+		auto line = m_metrics.getLineIndex2(el.first);
+		auto x = m_metrics.m_positionData[el.first];
+		auto y = m_metrics.m_linesData[line].height + lineHeight_P + 1;
+		MoveToEx(hDC, x, y, nullptr);
+		LineTo(hDC, x + charWidth(data()[el.first]), y);
 	}
 }
 
@@ -938,14 +987,15 @@ void CEdit::Update()
 	clock_t s = clock();
 	drawSelect();
 	drawConnections();
+	drawLineLabels();
 	int curRow = 0;
-	for (size_t curPos_U = 0; curPos_U < m_buffer.size(); curPos_U++)
+	for (size_t curPos_U = 0; curPos_U < data().size(); curPos_U++)
 	{
 		if (curPos_U >= m_metrics.m_linesData[curRow].back) curRow++;
-		if (m_buffer[curPos_U] == '{') DrawOverline(curPos_U, m_metrics.m_positionData[curPos_U], m_metrics.m_linesData[curRow].height, curPos_U == m_cursor);
-		if (m_buffer[curPos_U] == '\n') continue;
-		if (m_buffer[curPos_U] == '{' || m_buffer[curPos_U] == '}') continue;
-		TextOut(hDC, m_metrics.m_positionData[curPos_U], m_metrics.m_linesData[curRow].height + charOffset_P, &m_buffer[curPos_U], 1);
+		if (data()[curPos_U] == '{') DrawOverline(curPos_U, m_metrics.m_positionData[curPos_U], m_metrics.m_linesData[curRow].height, curPos_U == m_cursor);
+		if (data()[curPos_U] == '\n') continue;
+		if (data()[curPos_U] == '{' || data()[curPos_U] == '}') continue;
+		TextOut(hDC, m_metrics.m_positionData[curPos_U], m_metrics.m_linesData[curRow].height + charOffset_P, &data()[curPos_U], 1);
 	}
 
 	DeleteObject(pen);
@@ -973,21 +1023,21 @@ void CEdit::DrawOverline(int pos_U, int posX_P, int posY_P, bool isSelect)
 
 	SelectObject(hDC, pen);
 
-	for (size_t i = pos_U; i < m_buffer.size(); i++)
+	for (size_t i = pos_U; i < data().size(); i++)
 	{
-		curCharWidth_P = GetCharWidthU(m_buffer[i]) * charWidth_P;
+		curCharWidth_P = GetCharWidthU(data()[i]) * charWidth_P;
 
-		if (endPos_P + curCharWidth_P > textWidth_P || m_buffer[i] == '\n') {
+		if (endPos_P + curCharWidth_P > textWidth_P || data()[i] == '\n') {
 			MoveToEx(hDC, startPos_P, curPosY_P + charOffset_P - 2 * overlineHeight_U, nullptr);
 			LineTo(hDC, endPos_P, curPosY_P + charOffset_P - 2 * overlineHeight_U);
 			startPos_P = endPos_P = 0;
 			curPosY_P += lineHeight_P;
 		}
 
-		if (m_buffer[i] == '{') {
+		if (data()[i] == '{') {
 			overline++;
 		}
-		if (m_buffer[i] == '}') {
+		if (data()[i] == '}') {
 			overline--;
 			if (!overline) {
 				MoveToEx(hDC, startPos_P, curPosY_P + charOffset_P - 2 * overlineHeight_U, nullptr);
@@ -1006,13 +1056,13 @@ int CEdit::GetOverlineHeight(int pos_U)
 {
 	int overline = 0;
 	int maxOverline = 0;
-	for (size_t i = pos_U; i < m_buffer.size(); i++)
+	for (size_t i = pos_U; i < data().size(); i++)
 	{
-		if (m_buffer[i] == '{') {
+		if (data()[i] == '{') {
 			overline++;
 			if (overline > maxOverline) maxOverline = overline;
 		}
-		if (m_buffer[i] == '}') {
+		if (data()[i] == '}') {
 			overline--;
 			if (!overline) break;
 		}
@@ -1022,8 +1072,8 @@ int CEdit::GetOverlineHeight(int pos_U)
 
 int CEdit::GetLinePos(int pos_U)
 {
-	for (size_t i = pos_U; i < m_buffer.size(); i++)
-		if (m_buffer[i] == '\n') return i;
+	for (size_t i = pos_U; i < data().size(); i++)
+		if (data()[i] == '\n') return i;
 	return -1;
 }
 
@@ -1031,19 +1081,19 @@ int CEdit::GetSegmentPos(int pos_U)
 {
 	int curPos_S = 0;
 	for (size_t i = 0; i < pos_U; i++) 
-		if (m_buffer[i] == '=') curPos_S++;
+		if (data()[i] == '=') curPos_S++;
 	return curPos_S;
 }
 
 void CEdit::Restart()
 {
-	m_buffer.clear();
+	//data().clear();
 	m_cursor = m_sCursor = 0;
 	startSelectPos = endSelectPos = 0;
 
 	segments.clear();
 
-	m_metrics.update(0, m_buffer);
+	m_metrics.update(0, data());
 
 	SetCaretPosition();
 	UpdateScroll();
@@ -1115,7 +1165,7 @@ void CEdit::Load(string fileName)
 	for (size_t i = 0; i < tempInt; i++)
 	{
 		in.read(&tempChar, sizeof(tempChar));
-		m_buffer.push_back(tempChar);
+		//data().push_back(tempChar);
 	}
 	// Сегменты
 	in.read((char*)&tempInt, sizeof(tempInt));
@@ -1155,9 +1205,9 @@ void CEdit::Save(string fileName)
 	ofstream out(fileName);
 	int tempInt = 0;
 	// Текст
-	tempInt = m_buffer.size();
+	tempInt = data().size();
 	out.write((char*)&tempInt, sizeof(tempInt));
-	out.write(m_buffer.data(), tempInt);
+	out.write(data().data(), tempInt);
 	// Сегменты
 	tempInt = segments.size();
 	out.write((char*)&tempInt, sizeof(tempInt));

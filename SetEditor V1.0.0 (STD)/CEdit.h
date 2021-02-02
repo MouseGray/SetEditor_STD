@@ -97,6 +97,7 @@ public:
 	bool ToNext();
 
 	void ToBack();
+	void ToFront();
 	void Cut();
 	void Copy();
 	void Paste();
@@ -140,6 +141,9 @@ public:
 	////////////////////////////////////////////////////
 	void drawSelect();
 	void drawConnections();
+	void drawLineLabels();
+	void drawLabels();
+	void drawErrors();
 	////////////////////////////////////////////////////
 
 	int lineHeight() { return lineHeight_P; }
@@ -176,6 +180,8 @@ private:
 
 	int pageWidth_P = 0;
 	int pageHeight_P = 0;
+
+	int lineNumberOffset_P = 0;
 	// Поля окна
 	HWND hWnd = nullptr;
 

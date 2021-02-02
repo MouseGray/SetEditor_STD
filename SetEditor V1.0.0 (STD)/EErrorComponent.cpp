@@ -1,11 +1,18 @@
 #include "EErrorComponent.h"
 
-void EErrorComponent::erased(size_t begin, size_t end)
+void EErrorComponent::erased(size_t begin, size_t end, ERedoUndoComponent::Type ruType)
 {
-	::erased(m_textErrors, begin, end);
+	auto unit = ::erased<ERedoUndoEraseError>(m_textErrors, begin, end);
+	if (unit == nullptr) return;
+	add(unit, ruType);
 }
 
-void EErrorComponent::inserted(size_t pos, int count)
+void EErrorComponent::setErrors(size_t begin, std::vector<std::pair<size_t, char>>& data, ERedoUndoComponent::Type ruType)
 {
-	::inserted(m_textErrors, pos, count);
+	m_textErrors.insert(m_textErrors.begin() + begin, data.begin(), data.end());
+
+	auto unit = new ERedoUndoInsertError();
+	unit->begin = begin;
+	unit->end = begin + data.size();
+	add(unit, ruType);
 }

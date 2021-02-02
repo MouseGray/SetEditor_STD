@@ -1,12 +1,26 @@
 #pragma once
 #include <string>
+#include <vector>
 
 #undef min
 #undef max
 
 struct ERedoUndoErase;
 struct ERedoUndoInsert;
+
 struct ERedoUndoCursor;
+
+struct ERedoUndoInsertLabel;
+struct ERedoUndoEraseLabel;
+
+struct ERedoUndoInsertError;
+struct ERedoUndoEraseError;
+
+struct ERedoUndoEraseLineNumber;
+struct ERedoUndoInsertLineNumber;
+
+struct ERedoUndoEraseConnect;
+struct ERedoUndoInsertConnect;
 
 struct ERedoUndoUnit
 {
@@ -16,8 +30,14 @@ struct ERedoUndoUnit
 		Erase,
 		Insert,
 		Cursor,
-		InsertOverline,
-		EraseOverline
+		InsertLabel,
+		EraseLabel,
+		InsertError,
+		EraseError,
+		InsertLineNumber,
+		EraseLineNumber,
+		InsertConnect,
+		EraseConnect
 	};
 
 	ERedoUndoUnit(Action _action);
@@ -25,6 +45,15 @@ struct ERedoUndoUnit
 	ERedoUndoErase* toERUErase();
 	ERedoUndoInsert* toERUInsert();
 	ERedoUndoCursor* toERUCursor();
+	ERedoUndoInsertLabel* toERUInsertLabel();
+	ERedoUndoEraseLabel* toERUEraseLabel();
+	ERedoUndoInsertError* toERUInsertError();
+	ERedoUndoEraseError* toERUEraseError();
+	ERedoUndoInsertLineNumber* toERUInsertLineNumber();
+	ERedoUndoEraseLineNumber* toERUEraseLineNumber();
+
+	ERedoUndoInsertConnect* toERUInsertConnect();
+	ERedoUndoEraseConnect* toERUEraseConnect();
 
 	Action action = Action::Null;
 };
@@ -50,16 +79,56 @@ struct ERedoUndoCursor : public ERedoUndoUnit
 	int sCursor = 0;
 };
 
-struct ERedoUndoInsertOverline : public ERedoUndoUnit
+struct ERedoUndoInsertLabel : public ERedoUndoUnit
 {
-	ERedoUndoInsertOverline() : ERedoUndoUnit(Action::InsertOverline) {}
-	int startPos = 0;
-	int endPos = 0;
+	ERedoUndoInsertLabel() : ERedoUndoUnit(Action::InsertLabel) {}
+	size_t begin = 0;
+	size_t end = 0;
 };
 
-struct ERedoUndoEraseOverline : public ERedoUndoUnit
+struct ERedoUndoEraseLabel : public ERedoUndoUnit
 {
-	ERedoUndoEraseOverline() : ERedoUndoUnit(Action::EraseOverline) {}
-	int startPos = 0;
-	int endPos = 0;
+	ERedoUndoEraseLabel() : ERedoUndoUnit(Action::EraseLabel) {}
+	size_t begin = 0;
+	std::vector<std::pair<size_t, char>> data;
+};
+
+struct ERedoUndoInsertError : public ERedoUndoUnit
+{
+	ERedoUndoInsertError() : ERedoUndoUnit(Action::InsertError) {}
+	size_t begin = 0;
+	size_t end = 0;
+};
+
+struct ERedoUndoEraseError : public ERedoUndoUnit
+{
+	ERedoUndoEraseError() : ERedoUndoUnit(Action::EraseError) {}
+	size_t begin = 0;
+	std::vector<std::pair<size_t, char>> data;
+};
+
+struct ERedoUndoInsertLineNumber : public ERedoUndoUnit
+{
+	ERedoUndoInsertLineNumber() : ERedoUndoUnit(Action::InsertLineNumber) {}
+	size_t begin = 0;
+	size_t end = 0;
+};
+
+struct ERedoUndoEraseLineNumber : public ERedoUndoUnit
+{
+	ERedoUndoEraseLineNumber() : ERedoUndoUnit(Action::EraseLineNumber) {}
+	size_t begin = 0;
+	std::vector<int> data;
+};
+
+struct ERedoUndoInsertConnect : public ERedoUndoUnit
+{
+	ERedoUndoInsertConnect() : ERedoUndoUnit(Action::InsertConnect) {}
+	std::vector<size_t> elements;
+};
+
+struct ERedoUndoEraseConnect : public ERedoUndoUnit
+{
+	ERedoUndoEraseConnect() : ERedoUndoUnit(Action::EraseConnect) {}
+	std::vector<std::tuple<size_t, size_t, int>> data;
 };
