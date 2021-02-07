@@ -93,5 +93,6 @@ bool ETextComponent::isCorrectChar(const char c) noexcept
 	if (c == '+') return true;
 	if (c == '*') return true;
 	if (c == '/') return true;
+	if (c == '=') return true;
 	return false;
 }

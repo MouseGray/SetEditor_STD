@@ -4,6 +4,7 @@
 #define byte win_byte
 #include <Windows.h>
 #undef byte
+
 #include <CommCtrl.h>
 //#include <windowsx.h>
 #include <vector>
@@ -15,8 +16,8 @@
 #include <map>
 //#include <mysql.h>
 using namespace std;
-#include "DATLib.h"
-#include "TermTool.h"
+//#include "DATLib.h"
+//#include "TermTool.h"
 
 #include "Config.h"
 #include "UserInfo.h"
@@ -181,7 +182,6 @@ int mysql_SaveUserInfo(UserInfo* ui) noexcept(false);
 int mysql_LoadTaskInfo(int id, UserInfo* ui) noexcept(false);
 
 // ========== Processor ========== //
-int GetPriority(char a);
 
 // ======================================== |Prototypes| ======================================== //
 
@@ -193,7 +193,7 @@ int GetPriority(char a);
 // Вычисляет значение векторного выражения
 //Vec Calculate(vector<Vec> str, size_t system_size) noexcept(false);
 // Проверяет сообветствие операции
-int Distributor(CTable* table, int lineID, int segmentID);
+//int Distributor(CTable* table, int lineID, int segmentID);
 
 #define OP_COMPL_NULLSET 		0x1011		// > Дополнение пустого множества
 #define	OP_COMPL_UNISET_R1		0x1021		// > Дополнение универсального множества
@@ -282,17 +282,6 @@ int Distributor(CTable* table, int lineID, int segmentID);
 
 #define ERR_INVALID_LEFT_OPERAND		0x010000
 #define ERR_INVALID_RIGHT_OPERAND		0x020000
-
-bool IsSerialConversion(int operationID);
-
-int CheckExpression(const string& expression);
-
-void SplitIntoSegments(const string& text, vector<string>* partsOfText);
-void SplitIntoSegments(const string& text, const vector<int>& codes, vector<string>* partsOfText, vector<vector<int>>* partsOfCodes);
-
-void NormalForm(term_ptr pTerm);
-
-Vec TermCalculate(term_ptr pTerm, vector<Vec>* nVecs, int system_size, int* error);
 
 struct TIP
 {

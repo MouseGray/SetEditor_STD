@@ -1,5 +1,5 @@
 #pragma once
-#include "TermTool.h"
+#include "DATLib.h"
 #include "Header.h"
 
 #define ERR_T_NO_ERROR 0x0000
@@ -10,110 +10,104 @@
 #define ERR_T_INCORRECT_MARKER 0x0005
 #define ERR_T_INCORRECT_EXPRESSION 0x0006
 #define ERR_T_NOT_FOUND_TOFIND 0x00007
-int T_ComplNullset(term_ptr pTerm_1, term_ptr pTerm_2);
 
-int T_ComplUniset_R1(term_ptr pTerm_1, term_ptr pTerm_2);
+namespace infinity 
+{
+	void doubleComplement(Term* term);
 
-int T_ComplUniset_R2(term_ptr pTerm_1, term_ptr pTerm_2);
+    /*
+    * Union Nullset
+    * Intersect Uniset
+    * Add Zero
+    * Multiply by One
+    */
+	template<typename T>
+	void indifferentOperation(Term* term, action act, T value)
+	{
+        if (*term == act)
+        {
+            for (auto i = term->size() - 1; i >= 0; i--)
+                if (term->get_ref(i) == value) *term >> i;
+            if (term->size() == 1)
+                TermTool::collapse(term, term->get(0));
+        }
 
-int T_ComplUniset_R3M(term_ptr pTerm_1, term_ptr pTerm_2);
+        for (auto i = 0; i < term->size(); i++)
+            indifferentOperation(term->get(i), act, value);
+	}
 
-int T_ComplUniset_R4(term_ptr pTerm_1, term_ptr pTerm_2);
+    /*
+    * Union A and A
+    * Intersect A and A
+    */
+    void duplicates(Term* term, action act);
+}
 
-int T_ComplUniset_R5(term_ptr pTerm_1, term_ptr pTerm_2);
+namespace normalization
+{
+    void quantityNullset(Term* term);
 
-bool ___ComplExp(const term_ptr& pterm_1, const term_ptr& pterm_2);
+    /*
+    * Intersect Nullset
+    * Union Uniset
+    * Multiply by Zero
+    */
+    template<typename T>
+    void collapse(Term* term, action act, T value)
+    {
+        if (*term == act)
+        {
+            for (auto i = 0; i < term->size(); i++)
+                if (term->get_ref(i) == value) {
+                    TermTool::removeChildren(term);
+                    *term = value;
+                    break;
+                }
+        }
 
-bool ___UnionParantheses(const term_ptr& pterm_1, const term_ptr& pterm_2);
+        for (auto i = 0; i < term->size(); i++)
+            collapse(term->get(i), act, value);
+    }
 
-bool ___IntersectParantheses(const term_ptr& pterm_1, const term_ptr& pterm_2);
 
-bool ___MultiplyParantheses(const term_ptr& pterm_1, const term_ptr& pterm_2);
+    void coefficients(Term* term);
+}
 
-int T_DoubleCompl(term_ptr pTerm_1, term_ptr pTerm_2);
+namespace transformation
+{
+    /*
+    * Complement Nullser
+    * Complement Uniset
+    */
+    Term* complementVariable(const Term* term, char oldVar, char newVar);
 
-int T_InterNullset_R1(term_ptr pTerm_1, term_ptr pTerm_2);
+    Term* complementExpression(const Term* term);
 
-int T_InterNullset_R2(term_ptr pTerm_1, term_ptr pTerm_2);
+    /*
+    * Union
+    * Intersect
+    * Multiply
+    */
+    Term* parantheses(const Term* term, action top, action bottom);
 
-int T_InterNullset_R3M(term_ptr pTerm_1, term_ptr pTerm_2);
+    /*
+    * Union A and Complement A
+    * Intersect A and Complement A
+    */
+    Term* opposite(const Term* term, action act, char value);
 
-int T_InterNullset_R4(term_ptr pTerm_1, term_ptr pTerm_2);
+    Term* minus(const Term* term);
 
-int T_InterNullset_R5(term_ptr pTerm_1, term_ptr pTerm_2);
+    std::vector<Term*> formulaExcIncX2(const Term* term);
 
-int T_UnionNullset(term_ptr pTerm_1, term_ptr pTerm_2);
+    std::vector<Term*> formulaExcIncX3(const Term* term);
 
-int T_InterUniset(term_ptr pTerm_1, term_ptr pTerm_2);
+    Term* indentical(const Term* term);
 
-int T_UnionUniset(term_ptr pTerm_1, term_ptr pTerm_2);
+    Term* unisetComplement(const Term* term);
+}
 
-bool ___InterExpAndExp(const term_ptr& pterm_1, const term_ptr& pterm_2);
-
-bool ___UnionExpAndExp(const term_ptr& pterm_1, const term_ptr& pterm_2);
-
-int T_InterExpAndComplExp_R1(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_InterExpAndComplExp_R2(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_InterExpAndComplExp_R3M(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_InterExpAndComplExp_R4(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_InterExpAndComplExp_R5(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_UnionExpAndComplExp(term_ptr pTerm_1, term_ptr pTerm_2);
-
-bool ___DiffUnisetAndExp(const term_ptr& pterm_1, const term_ptr& pterm_2);
-
-int T_DiffExpAndExp(term_ptr pTerm_1, term_ptr pTerm_2);
-
-bool ___ExcIncFormulaX2(const term_ptr& pterm_1, const term_ptr& pterm_2);
-
-bool ___ExcIncFormulaX3(const term_ptr& pterm_1, const term_ptr& pterm_2);
-
-int T_DoubleNeg(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_NegExp(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_MultiplyZero_R1(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_MultiplyZero_R3(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_AddExpAndNegExp_R1(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_AddExpAndNegExp_R3(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_AddExpAndNegExp_R4(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_AddExpAndNegExp_R5(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_AddZero_M(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_Comp(term_ptr pTerm_1, term_ptr pTerm_2);
-
-double _Complite(term_ptr pTerm) noexcept(false);
-
-int T_CardialityNullset_R1(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_CardialityNullset_R3(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_CardialityNullset_R4(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_CardialityNullset_R5(term_ptr pTerm_1, term_ptr pTerm_2);
-
-bool ___CardComplExp(const term_ptr& pterm_1, const term_ptr& pterm_2);
-
-bool ___CardDiffUnisetAndExp(const term_ptr& pterm_1, const term_ptr& pterm_2);
-
-bool ___IndenticalExp(const term_ptr& pterm_1, const term_ptr& pterm_2);
-
-int T_MultiplyOne_M(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_MultiplyMinusOne(term_ptr pTerm_1, term_ptr pTerm_2);
-
-int T_DivideByOne(term_ptr pTerm_1, term_ptr pTerm_2);
-
+#if 0
 int T_ChangEqual(term_ptr pTerm_1_1, term_ptr pTerm_1_2, term_ptr pTerm_2_1, term_ptr pTerm_2_2);
 
 term_ptr _ChangeEqualTo(term_ptr pReceiver, term_ptr pSource);
@@ -122,8 +116,6 @@ term_ptr _ChangeOfSign(term_ptr pTerm);
 
 int T_Substitution(vector<term_ptr>* pMarkeredTerms_1, vector<term_ptr>* pMarkeredTerms_2, vector<term_ptr>* pTerms_1, vector<term_ptr>* pTerms_2);
 
-int T_Transposition(term_ptr pTerm_1, term_ptr pTerm_2);
-
 int T_Conclusion(const CTable* table, int lineID, const string& pTerm_1, const string& pTerm_2);
 
 int T_Given(UserInfo& UI, term_ptr pTerm_1, term_ptr pTerm_2);
@@ -131,3 +123,4 @@ int T_Given(UserInfo& UI, term_ptr pTerm_1, term_ptr pTerm_2);
 int T_ToFind(UserInfo& UI, term_ptr pTerm_1, term_ptr pTerm_2);
 
 int T_Answer(const CTable* table, UserInfo& UI, int lineID, term_ptr pTerm_1, term_ptr pTerm_2);
+#endif

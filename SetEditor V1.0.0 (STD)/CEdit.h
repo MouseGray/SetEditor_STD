@@ -13,7 +13,7 @@
 
 #include "EMetricsSheet.h"
 
-#include "CheckSyntax.h"
+//#include "CheckSyntax.h"
 #include "LineNum.h"
 #include "resource.h"
 using namespace std;

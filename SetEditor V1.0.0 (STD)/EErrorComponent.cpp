@@ -16,3 +16,8 @@ void EErrorComponent::setErrors(size_t begin, std::vector<std::pair<size_t, char
 	unit->end = begin + data.size();
 	add(unit, ruType);
 }
+
+void EErrorComponent::pushError(const std::pair<size_t, char>& error)
+{
+	m_textErrors.push_back(error);
+}

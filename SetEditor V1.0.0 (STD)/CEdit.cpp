@@ -219,7 +219,6 @@ void CEdit::W_Char(char c)
 	string character;
 	character += toupper(c);
 	Insert(m_cursor, character, vector<int>(1, 0));
-	m_sCursor = m_cursor;
 
 	m_metrics.update(0, data());
 	SetCaretPosition();
@@ -365,7 +364,6 @@ void CEdit::_Erase(size_t off, size_t count)
 
 int CEdit::Insert(size_t off, const string& text, const vector<int>& codes)
 {
-	AddUndo();
 	string paste = text;
 	vector<int> pasteCode = codes;
 	PrepareText(&paste, &pasteCode);
@@ -987,7 +985,8 @@ void CEdit::Update()
 	clock_t s = clock();
 	drawSelect();
 	drawConnections();
-	drawLineLabels();
+	drawLineLabels(); 
+	drawErrors();
 	int curRow = 0;
 	for (size_t curPos_U = 0; curPos_U < data().size(); curPos_U++)
 	{

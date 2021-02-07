@@ -1,416 +1,547 @@
 #include "DATLib.h"
 
-bool IsBinaryMinus(const char* str, size_t i)
+std::pair<int, int> TermTool::check(const std::string& data, const std::pair<int, int>& location)
 {
-	if (i == 0) return false;
-	i--;
-	return str[i] >= 'A' && str[i] <= 'Z' || str[i] >= '0' && str[i] <= '9' || str[i] == '|' || str[i] == ')';
-}
+	auto area = Area::Null;
+	auto begin = size_t(0);
+	auto end = location.second - 1;
+	auto first_point = true;
+	auto parentheses = std::stack<char>();
 
-#define IsSymbol(a) (a >= 'A' && a <= 'Z' || a == '!' || a == '@')
-#define IsDigit(a) (a >= '0' && a <= '9')
-#define IsDigitOrDot(a) (a >= '0' && a <= '9' || a == '.')
-#define IsSetOperation(a) (a == '~' || a == '#' || a == '$' || a == '^')
-#define IsSetUnaryOperation(a) (a == '~')
-#define IsSetBinaryOperation(a) (a == '#' || a == '$' || a == '^')
-#define IsNumberOperation(a) (a == '-' || a == '+' || a == '*' || a == '/')
-#define IsNumberUnaryOperation(a) (a == '-')
-#define IsNumberBinaryOperation(a) (a == '+' || a == '*' || a == '/')
+	for (auto index = location.first; index < location.second; index++)
+	{
+		auto value = data[index];
+		auto nextIndex = index + 1;
+		if (isVariable(value)) {
+			if (variableType(value) == ExpressionType::Set)
+			{
+				if (area == Area::Num)
+					return std::make_pair(index, static_cast<int>(TextError::SetVariableInNumArea));
+				area = Area::Set;
+				
+				if (index == end) continue;
 
-#define ONLY_SET												0
-#define ONLY_NUMBER												1
-#define ALL														2
+				auto nextValue = data[nextIndex];
+				if (isSetOperation(nextValue)) continue;
+				if (isClosingParenthese(nextValue)) continue;
 
-int ComplementSelect(int start, int complement, vector<byte_t>* markers)
-{
-	int marker = markers->at(start);
-	for (size_t j = start; j < markers->size(); j++) {
-		if (markers->at(j) < marker) {
-			if (markers->at(j) == 0) {
-				if (markers->at(j) >> 4 + complement) return marker;
-				else return 0;
+				return std::make_pair(nextIndex, nextValue);
 			}
-			else marker = markers->at(j);
-		}
-		else if (markers->at(j) >> 4 + complement) return marker;
-	}
-}
+			else
+			{
+				if (area == Area::Set) 
+					return std::make_pair(index, static_cast<int>(TextError::NumVariableInSetArea));
+				area = Area::Num;
 
-void RecomplementString(string* str, vector<byte_t>* markers, string* str_result, vector<byte_t>* marker_result)
-{
-	int marker = 0;
-	int current = 0;
-	for (size_t i = 0; i < str->size(); i++) {
-		if (markers->at(i) >> 4 > current) {
-			
-			for (; current < markers->at(i) >> 4; current++) {
-				marker = ComplementSelect(i, current, markers);
-				*str_result += OS_1;
-				*str_result += '(';
-				marker_result->push_back(marker);
-				marker_result->push_back(marker);
+				if (index == end) continue;
+
+				auto nextValue = data[nextIndex];
+				if (isUnaryNumOperation(nextValue) || isBinaryNumOperation(nextValue)) continue;
+				if (nextValue == FactionEnd) continue;
+
+				return std::make_pair(nextIndex, nextValue);
 			}
 		}
-		if (markers->at(i) >> 4 < current) {
-			for (; current > markers->at(i) >> 4; current--) {
-				*str_result += ')';
-				marker_result->push_back(marker);
-			}
+		if (isDigit(value))
+		{
+			if (area == Area::Set)
+				return std::make_pair(index, static_cast<int>(TextError::DigitInSetArea));
+			area = Area::Num;
+
+			if (index == end) continue;
+
+			auto nextValue = data[nextIndex];
+			if (isNumber(nextValue)) continue;
+			if (isUnaryNumOperation(nextValue) || isBinaryNumOperation(nextValue)) continue;
+			if (nextValue == FactionEnd) continue;
+
+			return std::make_pair(nextIndex, nextValue);
 		}
-		*str_result += str->at(i);
-		marker_result->push_back(markers->at(i));
+		if (value == Dot)
+		{
+			if (area == Area::Set)
+				return std::make_pair(index, static_cast<int>(TextError::DotInSetArea));
+
+			if (!first_point)
+				return std::make_pair(index, static_cast<int>(TextError::IncorrectDigit));
+
+			first_point = false;
+			if (index == begin)
+				return std::make_pair(index, static_cast<int>(TextError::IncorrectDigit));
+			if (index == end)
+				return std::make_pair(index, static_cast<int>(TextError::IncorrectDigit));
+
+			auto nextValue = data[nextIndex];
+			if (isDigit(nextValue)) continue;
+
+			return std::make_pair(nextIndex, nextValue);
+		}
+		if (isSetOperation(value))
+		{
+			if (area == Area::Num)
+				return std::make_pair(index, static_cast<int>(TextError::UnexpectedSetOperation));
+
+			if (index == begin)
+				return std::make_pair(index, static_cast<int>(TextError::NotFoundLeftOperand));
+			if (index == end)
+				return std::make_pair(index, static_cast<int>(TextError::NotFoundRightOperand));
+
+			auto nextValue = data[nextIndex];
+			if (isVariable(nextValue))
+			{
+				if (variableType(nextValue) == ExpressionType::Set) continue;
+			}
+			if (nextValue == Faction || nextValue == Complement) continue;
+
+			return std::make_pair(nextIndex, nextValue);
+		}
+		if (isUnaryNumOperation(value))
+		{
+			first_point = true;
+			if (area == Area::Set)
+				return std::make_pair(index, static_cast<int>(TextError::UnexpectedNumOperation));
+
+			area = Area::Num;
+			if (index == end)
+				return std::make_pair(index, static_cast<int>(TextError::NotFoundRightOperand));
+
+			auto nextValue = data[nextIndex];
+			if (isVariable(nextValue))
+			{
+				if (variableType(nextValue) == ExpressionType::Num) continue;
+			}
+			if (isDigit(nextValue)) continue;
+			if (nextValue == Faction || nextValue == Quantity) continue;
+
+			return std::make_pair(nextIndex, nextValue);
+		}
+		if (isBinaryNumOperation(value))
+		{
+			first_point = true;
+			if (area == Area::Set) 
+				return std::make_pair(index, static_cast<int>(TextError::UnexpectedNumOperation));
+
+			if (index == begin)
+				return std::make_pair(index, static_cast<int>(TextError::NotFoundLeftOperand));
+			if (index == end)
+				return std::make_pair(index, static_cast<int>(TextError::NotFoundRightOperand));
+
+			auto nextValue = data[nextIndex];
+			if (isVariable(nextValue))
+			{
+				if (variableType(nextValue) == ExpressionType::Num) continue;
+			}
+			if (isDigit(nextValue)) continue;
+			if (nextValue == Faction || nextValue == Quantity) continue;
+
+			return std::make_pair(nextIndex, nextValue);;
+		}
+		if (value == Complement)
+		{
+			parentheses.push(value);
+			if (area == Area::Num) 
+				return std::make_pair(index, static_cast<int>(TextError::UnexpectedSetOperation));
+
+			area = Area::Set;
+			if (index == end)
+				return std::make_pair(index, static_cast<int>(TextError::NotFoundRightOperand));
+
+			auto nextValue = data[nextIndex];
+			if (isVariable(nextValue))
+			{
+				if (variableType(nextValue) == ExpressionType::Set) continue;
+			}
+			if (nextValue == Faction || nextValue == Complement) continue;
+
+			return std::make_pair(nextIndex, nextValue);
+		}
+		if (value == ComplementEnd)
+		{
+			if (area == Area::Num) 
+				return std::make_pair(index, static_cast<int>(TextError::UnexpectedSetOperation));
+
+			if (parentheses.empty())
+				return std::make_pair(index, static_cast<int>(TextError::NotFoundOpenParenthese));
+			if (parentheses.top() != invertedParenthese(value))
+				return std::make_pair(index, static_cast<int>(TextError::UnexpectedClosingParenthese));
+			parentheses.pop();
+
+			if (index == end) continue;
+
+			auto nextValue = data[nextIndex];
+			if (isSetOperation(nextValue)) continue;
+			if (isClosingParenthese(nextValue)) continue;
+
+			return std::make_pair(nextIndex, nextValue);
+		}
+		if (value == Faction)
+		{
+			parentheses.push(value);
+			if (index == end)
+				return std::make_pair(index, static_cast<int>(TextError::NotFoundRightOperand));
+
+			auto nextValue = data[nextIndex];
+			if (isVariable(nextValue)) continue;
+			if (isDigit(nextValue)) continue;
+			if (isUnaryNumOperation(nextValue)) continue;
+			if (isOpenParenthese(nextValue)) continue;
+
+			return std::make_pair(nextIndex, nextValue);
+		}
+		if (value == FactionEnd)
+		{
+			if (parentheses.empty())
+				return std::make_pair(index, static_cast<int>(TextError::NotFoundOpenParenthese));
+			if (parentheses.top() != invertedParenthese(value))
+				return std::make_pair(index, static_cast<int>(TextError::UnexpectedClosingParenthese));
+			parentheses.pop();
+			// if (index == begin) <- parentheses.empty()
+			if (index == end) continue;
+
+			auto nextValue = data[nextIndex];
+			if (isSetOperation(nextValue)) continue;
+			if (isUnaryNumOperation(nextValue) || isBinaryNumOperation(nextValue)) continue;
+			if (isClosingParenthese(nextValue)) continue;
+
+			return std::make_pair(nextIndex, static_cast<int>(nextValue));
+		}
+		if (value == Quantity)
+		{
+			parentheses.push(value);
+			if (area == Area::Set)
+				return std::make_pair(index, static_cast<int>(TextError::UnexpectedNumOperation));
+
+			area = Area::Set;
+			if (index == end)
+				return std::make_pair(index, static_cast<int>(TextError::NotFoundRightOperand));
+
+			auto nextValue = data[nextIndex];
+			if (isVariable(nextValue))
+			{
+				if (variableType(nextValue) == ExpressionType::Set) continue;
+			}
+			if (nextValue == Faction || nextValue == Complement) continue;
+
+			return std::make_pair(nextIndex, static_cast<int>(nextValue));
+		}
+		if (value == QuantityEnd)
+		{
+			if (area == Area::Num)
+				return std::make_pair(index, static_cast<int>(TextError::UnexpectedSetOperation));
+
+			area = Area::Num;
+			if (parentheses.empty())
+				return std::make_pair(index, static_cast<int>(TextError::NotFoundOpenParenthese));
+			if (parentheses.top() != invertedParenthese(value))
+				return std::make_pair(index, static_cast<int>(TextError::UnexpectedClosingParenthese));
+			parentheses.pop();
+
+			if (index == end) continue;
+
+			auto nextValue = data[nextIndex];
+			if (isUnaryNumOperation(nextValue) || isBinaryNumOperation(nextValue)) continue;
+			if (nextValue == FactionEnd) continue;
+
+			return std::make_pair(nextIndex, static_cast<int>(nextValue));
+		}
 	}
-	for (size_t i = 0; i < (markers->back() >> 4); i++) {
-		*str_result += ')';
-		marker_result->push_back(marker);
-	}
+	if (!parentheses.empty())
+		return std::make_pair(end, static_cast<int>(TextError::UnexpectedClosingParenthese));
+	return std::make_pair(0, -1);
 }
 
-// Возможные символы:
-// Множества:					'A'..'Z'
-#define isSet(c)				(c >= 'A' && c <= 'Z' || a == '!' || a == '@')
-// Числа:						'0'..'9', '.'
-#define isDigit(c)				(c >= '0' && c <= '9')
-#define isDot(c)				(c == '.')
-#define isNumber(c)				(isDigit(c) || isDot(c))
-// Операции над множествами:	'~', '#', '$', '^'
-#define isSetOperation(c)		(c == '~' || c == '#' || c == '$' || c == '^')
-#define isUnarySetOperation(c)	(c == '~')
-#define isBinarySetOperation(c)	(c == '#' || c == '$' || c == '^')
-// Операции над числами:		'-', '+', '*', '/'
-#define isNumOperation(c)		(c == '-' || c == '+' || c == '*' || c == '/')
-#define isUnaryNumOperation(c)	(c == '-')
-#define isBinaryNumOperation(c)	(c == '+' || c == '*' || c == '/')
-// Скобки:						'(', ')', '{', '}'
-#define isOpenBracket(c)		(c == '(' || c == '{')
-#define isStdOpenBracket(c)		(c == '(')
-#define isNStdOpenBracket(c)	(c == '{')
-#define isCloseBracket(c)		(c == ')' || c == '}')
-#define isStdCloseBracket(c)	(c == ')')
-#define isNStdCloseBracket(c)	(c == '}')
-// Сегмент:						'='
-#define isSegment(c)			(c == '=')
-// Модуль:						'|'
-#define isModule(c)				(c == '|')
-// Нумерация:					':', '<', '>'
-#define	isNumeration(c)			(c == ':' || c == '<' || c == '>')
-#define isSeparator(c)			(c == ':')
-#define isNumerBracket(c)		(c == '<' || c == '>')
-#define isNumerOpenBracket(c)	(c == '<')
-#define isNumerCloseBracket(c)	(c == '>')
-// Прочее:						'[', ']'
-#define isOther(c)				(c == '[' || c == ']')
-
-term_ptr TermCoder(const string& str, int* error)
+Term* TermTool::createTerm(const std::string& str)
 {
-	string string_of_number;
-	stack<term_ptr> stck;
-	term_ptr result = nullptr;
+	std::string number;
+	std::stack<Term*> opts;
+	Term* result = nullptr;
 
-	bool opbr = false;
-	for (size_t i = 0; i < str.size(); i++)
+	for (auto ch : str)
 	{
 		// --------------- Преобразование строки в число --------------- //
-		if(isNumber(str[i]))
+		if (isNumber(ch))
 		{
-			string_of_number += str[i];
+			number += ch;
 			continue;
 		}
-		if (!string_of_number.empty())
+		if (!number.empty())
 		{
-			result = make_shared<Term>(stod(string_of_number), term_type::number);
-			string_of_number.clear();
+			result = new Term(std::stof(number));
+			number.clear();
 		}
 		// --------------- Преобразование в DAT запись --------------- //
-		switch (str[i])
+		switch (ch)
 		{
-			case OS_4: case OA_4:
+			case Minus: case Division:
 			{
-				while (!stck.empty() && GetPriority(str[i]) >= GetPriority((char)stck.top()->_value))
+				while (!opts.empty())
 				{
-					stck.top()->add(result);
-					result = stck.top();
-					stck.pop();
+					if (priority(action(ch)) > priority(opts.top()->toAction())) break;
+					*opts.top() << result;
+					result = opts.top();
+					opts.pop();
 				}
-				stck.push(make_shared<Term>(str[i], term_type::operation));
-				stck.top()->add(result);
+				opts.push(new Term(action(ch)));
+				*opts.top() << result;
 				break;
 			}
-			case OS_2: case OS_3: case OA_2: case OA_3:
+			case Intersection: case Union: case Addition: case Multiplication:
 			{
-				while (!stck.empty() && GetPriority(str[i]) >= GetPriority((char)stck.top()->_value))
+				while (!opts.empty())
 				{
-					stck.top()->add(result);
-					result = stck.top();
-					stck.pop();
+					if (priority(action(ch)) > priority(opts.top()->toAction())) break;
+					*opts.top() << result;
+					result = opts.top();
+					opts.pop();
 				}
-				if (result->_value == str[i])
+				if (*result == action(ch))
 				{
-					stck.push(result);
+					opts.push(result);
 					result = nullptr;
 				}
 				else
 				{
-					stck.push(make_shared<Term>(str[i], term_type::operation));
-					stck.top()->add(result);
+					opts.push(new Term(action(ch)));
+					*opts.top() << result;
 				}
 				break;
 			}
-			case OA_1:
+			case Subtraction:
 			{
-				if (IsBinaryMinus(str.data(), i)) {
-					while (!stck.empty() && GetPriority(OA_2) >= GetPriority((char)stck.top()->_value))
-					{
-						stck.top()->add(result);
-						result = stck.top();
-						stck.pop();
-					}
-					if (result->_value == OA_2)
-					{
-						stck.push(result);
-						result = nullptr;
-					}
-					else
-					{
-						stck.push(make_shared<Term>(OA_2, term_type::operation));
-						stck.top()->add(result);
-					}
-				}
-				stck.push(make_shared<Term>(str[i], term_type::operation));
+				opts.push(new Term(action(ch)));
 				break;
 			}
-			case OB_1:
+			case Complement:
 			{
-				stck.push(make_shared<Term>(str[i], term_type::operation));
+				opts.push(new Term(action(ch)));
 				break;
 			}
-			case OB_2:
+			case ComplementEnd:
 			{
-				while (!stck.empty() && GetPriority(str[i]) >= GetPriority((char)stck.top()->_value))
+				while (!opts.empty())
 				{
-					stck.top()->add(result);
-					result = stck.top();
-					stck.pop();
+					if (opts.top()->toAction() == Complement) break;
+					*opts.top() << result;
+					result = opts.top();
+					opts.pop();
 				}
-				stck.pop();
+				*opts.top() << result;
+				result = opts.top();
+				opts.pop();
 				break;
 			}
-			case OB__:
+			case Quantity:
 			{
-				if (opbr)
-				{
-					while (!stck.empty() && GetPriority(OB_4) >= GetPriority((char)stck.top()->_value))
-					{
-						stck.top()->add(result);
-						result = stck.top();
-						stck.pop();
-					}
-					stck.push(make_shared<Term>(str[i], term_type::operation));
-					//stck.top()->add(result);
-					opbr = false;
-				}
-				else
-				{
-					stck.push(make_shared<Term>(OB_3, term_type::operation));
-					opbr = true;
-				}
+				opts.push(new Term(action(ch)));
 				break;
 			}
-			case '{':
+			case QuantityEnd:
 			{
-				stck.push(make_shared<Term>(str[i], term_type::operation));
+				while (!opts.empty())
+				{
+					if (opts.top()->toAction() == Quantity) break;
+					*opts.top() << result;
+					result = opts.top();
+					opts.pop();
+				}
+				*opts.top() << result;
+				result = opts.top();
+				opts.pop();
+			}
+			case Faction:
+			{
+				opts.push(new Term(action(ch)));
 				break;
 			}
-			case '}':
+			case FactionEnd:
 			{
-				while (!stck.empty() && ((char)stck.top()->_value != '{'))
+				while (!opts.empty())
 				{
-					stck.top()->add(result);
-					result = stck.top();
-					stck.pop();
+					if (opts.top()->toAction() == Faction) break;
+					*opts.top() << result;
+					result = opts.top();
+					opts.pop();
 				}
-				stck.pop();
-				stck.push(make_shared<Term>(OS_1, term_type::operation));
+				opts.pop();
 				break;
 			}
 			default:
 			{
-				result = make_shared<Term>(str[i], term_type::symbol);
+				result = new Term(ch);
 			}
 		}
 	}
-	if (!string_of_number.empty())
+	if (!number.empty())
 	{
-		result = make_shared<Term>(stod(string_of_number), term_type::number);
-		string_of_number.clear();
+		result = new Term(std::stof(number));
+		number.clear();
 	}
-	while (!stck.empty())
+	while (!opts.empty())
 	{
-		stck.top()->add(result);
-		result = stck.top();
-		stck.pop();
+		*opts.top() << result;
+		result = opts.top();
+		opts.pop();
 	}
 
 	return result;
 }
 
-Vec TermCalculate(term_ptr pTerm, vector<Vec>* nVecs, int system_size, int* error)
+bool TermTool::isEqual(const Term& left, const Term& right)
 {
-	if (pTerm->_type == term_type::number) {
-		return Vec(vec_type::number, pTerm->_value, system_size);
-	}
-	if (pTerm->_type == term_type::symbol) {
-		size_t k;
-		for (k = 0; k < nVecs->size(); k++)
-		{
-			if (nVecs->at(k).code() == pTerm->_value) {
-				Vec result(nVecs->at(k));
-				return result;
-			}
-		}
-		if (k == nVecs->size())
-		{
-			*error = ERR_FOUNT_INVALID_SET;
-			return Vec(system_size);
-		}
-	}
-	if (pTerm->_type == term_type::operation) {
-		switch ((char)pTerm->_value)
-		{
-			case OS_1: {
-				Vec result(~TermCalculate(pTerm->get(0), nVecs, system_size, error));
-				return result;
-			}
-			case OS_2: {
-				Vec result(TermCalculate(pTerm->get(0), nVecs, system_size, error));
-				for (size_t i = 1; i < pTerm->size(); i++) {
-					result = result & TermCalculate(pTerm->get(i), nVecs, system_size, error);
-				}
-				return result;
-			}
-			case OS_3: {
-				Vec result(TermCalculate(pTerm->get(0), nVecs, system_size, error));
-				for (size_t i = 1; i < pTerm->size(); i++) {
-					result = result | TermCalculate(pTerm->get(i), nVecs, system_size, error);
-				}
-				return result;
-			}
-			case OS_4: {
-				Vec result(TermCalculate(pTerm->get(0), nVecs, system_size, error));
-				for (size_t i = 1; i < pTerm->size(); i++) {
-					result = result % TermCalculate(pTerm->get(i), nVecs, system_size, error);
-				}
-				return result;
-			}
-			case OA_2: {
-				Vec result(TermCalculate(pTerm->get(0), nVecs, system_size, error));
-				for (size_t i = 1; i < pTerm->size(); i++) {
-					result = result + TermCalculate(pTerm->get(i), nVecs, system_size, error);
-				}
-				return result;
-			}
-			case OA_3: {
-				Vec result(TermCalculate(pTerm->get(0), nVecs, system_size, error));
-				for (size_t i = 1; i < pTerm->size(); i++) {
-					result = result * TermCalculate(pTerm->get(i), nVecs, system_size, error);
-				}
-				return result;
-			}
-			case OA_4: {
-				Vec result(TermCalculate(pTerm->get(0), nVecs, system_size, error));
-				for (size_t i = 1; i < pTerm->size(); i++) {
-					result = result / TermCalculate(pTerm->get(i), nVecs, system_size, error);
-				}
-				return result;
-			}
-			case OB__: {
-				Vec result(TermCalculate(pTerm->get(0), nVecs, system_size, error));
-				result.type(vec_type::number);
-				return result;
-			}
-		}
-	}
-	return Vec(system_size);
-}
+	if (left != right) return false;
+	if (left.empty()) return true;
 
-term_ptr _Copy_(term_ptr pTerm)
-{
-	if (pTerm == nullptr) return nullptr;
-
-	term_ptr receiver = make_shared<Term>(*pTerm);
-	receiver->remove_all();
-
-	for (size_t i = 0; i < pTerm->size(); i++) receiver->add(_Copy_(pTerm->get(i)));
-
-	return receiver;
-}
-
-size_t GetDeep(term_ptr pTerm)
-{
-	if (pTerm == nullptr) return 0;
-
-	size_t deep = 0;
-	for (size_t i = 0; i < pTerm->size(); i++)
-		deep = max(deep, GetDeep(pTerm->get(i)));
-	return deep + 1;
-}
-
-int GetMaxDeep(term_ptr pTerm)
-{
-	if (pTerm == nullptr) return -1;
-
-	size_t deep = 0;
-	size_t maxDeep = 0;
-
-	int indexMaxDeep = -1;
-
-	for (size_t i = 0; i < pTerm->size(); i++)
-	{
-		deep = GetDeep(pTerm->get(i));
-		if (deep > maxDeep)
-		{
-			maxDeep = deep;
-			indexMaxDeep = i;
-		}
-	}
-	return indexMaxDeep;
-}
-
-term_ptr TrimTop(term_ptr pTerm)
-{
-	if (pTerm == nullptr) return nullptr;
-	if (pTerm->size() != 1) return nullptr;
-	return pTerm->get(0);
-}
-
-bool Equal(term_ptr pTerm_1, term_ptr pTerm_2)
-{
-	size_t j, i;
-	__int64 e, line = 0xFFFFFFFFFFFFFFFF;
-	
-	if (pTerm_1 == nullptr || pTerm_2 == nullptr)
-		return pTerm_1 == pTerm_2;
-
-	if (*pTerm_1 != *pTerm_2) return false;
-	if (pTerm_1->size() == 0) return true;
-
-	if (pTerm_1->size() > 64) throw 0x0311;
-
-	line <<= pTerm_1->size();
-	for (i = 0; i < pTerm_1->size(); i++)
-	{
-		for (j = 0, e = 1; j < pTerm_2->size(); j++, e <<= 1)
-		{
-			if (line & e) continue;
-			if (Equal(pTerm_1->get(i), pTerm_2->get(j)))
-			{
-				line |= e;
+	std::vector<bool> checked(left.size(), false);
+	int i, j;
+	for (i = 0; i < left.size(); i++) {
+		for (j = 0; j < right.size(); j++) {
+			if (checked[j]) continue;
+			if (isEqual(*left[i], *right[j])) {
+				checked[j] = true;
 				break;
 			}
 		}
-		if (j == pTerm_2->size()) return false;
+		if (j == right.size()) return false;
 	}
-	if (~line) return false;
-
+	for (auto b : checked) if (!b) return false;
 	return true;
+}
+
+bool TermTool::isContain(const Term& term, const Term& sub_term)
+{
+	if (term.empty()) return false;
+	if (sub_term.empty()) return false;
+
+	for (auto i = 0; i < term.size(); i++)
+		if (isEqual(term.get_ref(i), sub_term)) return true;
+
+	if (term >= sub_term) {
+		std::vector<bool> checked(term.size(), false);
+		int i, j;
+		for (i = 0; i < sub_term.size(); i++) {
+			for (j = 0; j < term.size(); j++) {
+				if (checked[j]) continue;
+				if (isEqual(*sub_term[i], *term[j])) {
+					checked[j] = true;
+					break;
+				}
+			}
+			if (j == term.size()) return false;
+		}
+		return true;
+	}
+	return false;
+}
+
+int TermTool::priority(const action value)
+{
+	switch (value) {
+		case Undefined:         return 0;
+		case Intersection:      return 7;
+		case Union:             return 6;
+		case Minus:             return 7;
+		case Subtraction:       return 4;
+		case Addition:          return 4;
+		case Multiplication:    return 5;
+		case Division:          return 5;
+		case Complement:        return 3;
+		case ComplementEnd:     return 3;
+		case Quantity:          return 2;
+		case QuantityEnd:       return 2;
+		case Faction:           return 1;
+		case FactionEnd:        return 1;
+	}
+	return 0;
+}
+
+Term* TermTool::copy(const Term* term)
+{
+	auto result = term->copy();
+	for (size_t i = 0; i < term->size(); i++) 
+		*result << copy((*term)[i]);
+	return result;
+}
+
+void TermTool::remove(Term* term)
+{
+	for (size_t i = 0; i < term->size(); i++)
+		remove(term->get(i));
+	delete term;
+}
+
+void TermTool::removeChildren(Term* term)
+{
+	for (auto i = 0; i < term->size(); i++)
+		TermTool::remove(term->get(0));
+	term->trim();
+}
+
+void TermTool::collapse(Term* dest, Term* src)
+{
+	auto tmp_top = dest->get(0);
+	auto tmp_bottom = src;
+	dest = src;
+	src->trim();
+	TermTool::remove(tmp_top);
+}
+
+TermCalculator::TermCalculator(const std::string sets)
+{
+	m_system_size = (1 << sets.size());
+	for(auto i = 0; i < sets.size(); i++)
+		m_vecs.insert({ sets[i], Vec(m_system_size, 1 << i) });
+}
+
+Vec TermCalculator::calculate(const Term& term)
+{
+	if (term == Term::Type::Number)
+		return Vec(Vec::Type::number, term.toNumber(), m_system_size);
+
+	if (term == Term::Type::Variable) {
+		auto vec = m_vecs.find(term.toVariable());
+		return vec->second;
+	}
+
+	if (term == Term::Type::Operation) {
+		switch (term.toAction())
+		{
+			case Complement: {
+				return ~calculate(*term[0]);
+			}
+			case Intersection: {
+				Vec result(Vec::Type::set, 1, m_system_size);
+				for (size_t i = 0; i < term.size(); i++)
+					result &= calculate(*term[i]);
+				return result;
+			}
+			case Union: {
+				Vec result(Vec::Type::set, double(0), m_system_size);
+				for (size_t i = 0; i < term.size(); i++)
+					result |= calculate(*term[i]);
+				return result;
+			}
+			case Minus: {
+				return calculate(*term[0]) ^ calculate(*term[1]);
+			}
+			case Addition: {
+				Vec result(Vec::Type::number, double(0), m_system_size);
+				for (size_t i = 0; i < term.size(); i++)
+					result += calculate(*term[i]);
+				return result;
+			}
+			case Multiplication: {
+				Vec result(Vec::Type::number, double(1), m_system_size);
+				for (size_t i = 0; i < term.size(); i++)
+					result *= calculate(*term[i]);
+				return result;
+			}
+			case Division: {
+				return calculate(*term[0]) / calculate(*term[1]);;
+			}
+			case Quantity: {
+				return calculate(*term[0]).toQuantity();
+			}
+		}
+	}
+	return Vec(m_system_size);
 }

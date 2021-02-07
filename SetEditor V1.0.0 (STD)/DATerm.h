@@ -1,65 +1,88 @@
 #pragma once
-#include <memory>
 
-using namespace std;
+#include <vector>
+#include <assert.h>
 
-enum class term_type
-{
-	null,
-	number,
-	symbol,
-	operation
-};
-
-enum class term_subtype
-{
-	set,
-	number
-};
+#include "Operation.h"
 
 class Term
 {
 public:
-	Term(double value, term_type type);
-	Term(const Term& pTerm);
-	Term(shared_ptr<Term> pTerm);
+	enum class Type {
+		Undefined,
+		Number,
+		Variable,
+		Operation
+	};
 
-	void set(double value, term_type type);
+	Term(const char value);
+	Term(const float value);
+	Term(const action value);
+
+	char toVariable() const;
+	float toNumber() const;
+	action toAction() const;
+
+	Term& operator=(const char value);
+	Term& operator=(const float value);
+	Term& operator=(const action value);
+
+	bool operator==(const char value) const;
+	bool operator==(const float value) const;
+	bool operator==(const action value) const;
+
+	bool operator==(const Term& term) const;
+
+	bool operator==(const Type type) const;
+
+	bool operator<=(const Term& term) const;
+
+	bool operator>=(const Term& term) const;
+
+	bool operator!=(const char value) const;
+	bool operator!=(const float value) const;
+	bool operator!=(const action value) const;
+
+	bool operator!=(const Term& term) const;
+
+	bool operator!=(const Type type) const;
+
+	Term& operator<<(Term* term);
+
+	Term& operator<<(const char value);
+	Term& operator<<(const float value);
+	Term& operator<<(const action value);
 	
-	size_t size();
+	Term* operator>>(const int pos);
 
-	bool empty();
+	Term* operator[](const int pos) const;
 
-	bool operator==(Term term);
-	bool operator!=(Term term);
+	Term* get(const int pos) const;
 
-	void add(shared_ptr<Term> pTerm);
-	shared_ptr<Term> get(size_t n);
-	
-	void copy(Term term);
-	void fcopy(const Term term);
+	Term& get_ref(const int pos) const;
 
-	bool is(double value, term_type type);
-	bool is(double value, term_type type, size_t size);
-	bool is(shared_ptr<Term> pTerm);
+	bool equal(const Term& term) const;
 
-	bool ismin(double value, term_type type, size_t size);
-	bool ismax(double value, term_type type, size_t size);
+	int size() const;
 
+	bool empty() const;
 
-	void remove(size_t n);
-	void remove_all();
-	
-	~Term();
+	void trim();
 
-	double _value = 0;
-
-	term_type _type = term_type::null;
+	Term* copy() const;
 private:
-	shared_ptr<Term>* _subterms = nullptr;
-	size_t _subterm_p = 0;
-	size_t _subterm_size = 0;
+	union Value {
+		char variable;
+		float number;
+		action operation;
+	};
+
+	Type m_type;
+	Value m_value;
+	std::vector<Term*> m_subTerms;
+
+	Term(Type _type, Value _value);
 };
 
 
-typedef shared_ptr<Term> term_ptr;
+typedef Term* term_ptr;

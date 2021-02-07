@@ -1,6 +1,7 @@
 #include "Header.h"
 #include "WinClasses.h"
 #include "resource.h"
+#include "DATLib.h"
 // ==================== =========== ==================== //
 
 Config MainConfig;
@@ -368,10 +369,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 			if ((HWND)wParam == WND_Panel_Check)
 			{
-				if (!SendMessage(WND_Editor, WM_CHECK, 0, 0)) {
+				//if (!SendMessage(WND_Editor, WM_CHECK, 0, 0)) {
 					CEdit* edit = (CEdit*)SendMessage(WND_Editor, WM_GETDATA, 0, 0);
 					MainBridge(edit);
-				}
+				//}
 				break;
 			}
 			if ((HWND)wParam == WND_Panel_Keypad)
@@ -1480,33 +1481,48 @@ int FindNextTask()
 	return max(c_max, p_max) + 1;
 }
 
-bool ComplNullset(const term_ptr& pTerm_1, const term_ptr& pTerm_2)
+std::vector<std::pair<int, int>> getStartOfLines(const std::string& data)
 {
-	// Правая: универсальное множесто
-	// Левая: дополнение к пустому множеству
-	// ----------------------------------------
-	// Проверка на ноль
-	// ----------------------------------------
-	if (pTerm_1 == nullptr || pTerm_2 == nullptr) return false;
-	// ----------------------------------------
-	// Нахождение сторон
-	// ----------------------------------------
-	term_ptr left, right;
-	if (pTerm_1->is(UNISET, term_type::symbol)) {
-		left = pTerm_2;
-		right = pTerm_1;
+	auto res = std::vector<std::pair<int, int>>();
+	auto start = 0;
+	auto end = 0;
+
+	auto it = data.begin();
+	while (it != data.end())
+	{
+		it = std::find(it, data.end(), '\n');
+		if (it == data.end())
+			end = data.size();
+		else
+			end = std::distance(data.begin(), it++);
+		if (start != end)
+			res.push_back(std::make_pair(start, end));
+		start = end + 1;
 	}
-	else {
-		if (!pTerm_2->is(UNISET, term_type::symbol)) return false;
-		left = pTerm_1;
-		right = pTerm_2;
+	return res;
+}
+
+std::vector<std::pair<int, int>> getSegments(const std::string& data, int start, int end)
+{
+	auto res = std::vector<std::pair<int, int>>();
+
+	auto _start = 0;
+	auto _end = 0;
+
+	auto it = data.begin() + start;
+	auto endIt = data.begin() + end;
+	while (it != endIt)
+	{
+		it = std::find(it, endIt, '=');
+		if (it == endIt)
+			_end = data.size();
+		else
+			_end = std::distance(data.begin(), it++);
+		if (_start != _end)
+			res.push_back(std::make_pair(_start, _end));
+		_start = _end + 1;
 	}
-	// ----------------------------------------
-	// Проверить левую сторону
-	// ----------------------------------------
-	if (!left->is('{', term_type::operation, 1)) return false;
-	if (!left->get(0)->is(NULLSET, term_type::symbol)) return false;
-	return true;
+	return res;
 }
 
 void MainBridge(CEdit* edit)
@@ -1514,64 +1530,27 @@ void MainBridge(CEdit* edit)
 	size_t system_size;
 	int error = ERR_NO_TESTED;
 
-	vector<Vec> sets = CreateSets(MainUserInfo.GetCurrentTask()->SetNames, &system_size);
-
-	CTable table;
-	//table.CreateTable(edit->m_buffer, edit->codes, edit->segments);
-	table.SetConnections();
-
-	vector<string> tempPartsOfText;
-	vector<vector<int>> tempPartsOfCodes;
-
-	vector<string> partsOfText;
-	vector<vector<int>> partsOfCodes;
-
-	term_ptr left_term, right_term;
-
-	//SendMessage(WND_Result, WM_SETDATA, PROP_RESULT_TYPE, TYPE_WAIT);
-	//ShowWindow(WND_Result, SW_SHOW);
-
-	for (size_t i = 0; i < table.Lines.size(); i++)
+	auto lines = getStartOfLines(edit->data());
+	auto segments = std::vector<std::vector<std::pair<int, int>>>();
+	for (auto l : lines)
+		segments.push_back(getSegments(edit->data(), l.first, l.second));
+	
+	for (auto l: segments)
 	{
-		for (size_t j = 0; j < table.Lines[i].segments.size(); j++)
+		for (auto i = 1; i < l.size(); i++)
 		{
-			table.Lines[i].segments[j].error = ERR_NO_TESTED;
-
-			left_term = TermCoder(table.Lines[i].segments[j].left, &error);
-			right_term = TermCoder(table.Lines[i].segments[j].right, &error);
-
-			/*if (IsSerialConversion(table.Lines[i].segments[j].operation)) {
-				// Берем значение левой части из предыдущего выражния
-				Vec left_vec = TermCalculate(left_term, &sets, system_size, &error);
-				// Находим значение правой части
-				error = ERR_NO_ERROR;
-				Vec right_vec = TermCalculate(right_term, &sets, system_size, &error);
-				if (error != ERR_NO_ERROR) {
-					table.Lines[i].segments[j].error = error;
-					continue;
-				}
-				// Сравниваем правую и левую части
-				if (left_vec != right_vec) {
-					table.Lines[i].segments[j].error = ERR_EXPRESSIONS_NOT_EQUAL;
-					continue;
-				}
-			}*/
-
-			if (Distributor(&table, i, j)) {
-				table.Lines[i].segments[j].error = ERR_NO_ERROR;
-				continue;
+			auto err_1 = TermTool::check(edit->data(), l[i - 1]);
+			if (err_1.second != -1) {
+				edit->pushError(std::make_pair(err_1.first, err_1.second));
+				break;
 			}
-			else {
-				table.Lines[i].segments[j].error = ERR_OPERATION_ERROR;
-				continue;
+			auto err_2 = TermTool::check(edit->data(), l[i]);
+			if (err_2.second != -1) {
+				edit->pushError(std::make_pair(err_2.first, err_2.second));
+				break;
 			}
 		}
 	}
-
-	size_t e = 0;
-	for (size_t l = 0; l < table.Lines.size(); l++)
-		for (size_t s = 0; s < table.Lines[l].segments.size(); s++, e++) 
-			edit->segments[e].error = table.Lines[l].segments[s].error;
 
 	// Оценка
 	int errors = 0;

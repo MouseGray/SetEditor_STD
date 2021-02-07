@@ -66,12 +66,6 @@
     <ClCompile Include="LineNum.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="TermTool.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="Transforms.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="ETextComponent.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
@@ -149,13 +143,7 @@
     <ClInclude Include="LineNum.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="TermTool.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
     <ClInclude Include="TermResurses.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="Transforms.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="ETextComponent.h">

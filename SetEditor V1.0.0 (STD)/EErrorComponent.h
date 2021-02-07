@@ -19,6 +19,8 @@ public:
 
 	void setErrors(size_t begin, std::vector<std::pair<size_t, char>>& data, ERedoUndoComponent::Type ruType);
 
+	void pushError(const std::pair<size_t, char>& error);
+
 	inline const std::vector<std::pair<size_t, char>>& errors() { return m_textErrors; }
 };
 

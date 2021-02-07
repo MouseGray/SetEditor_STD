@@ -1,258 +1,147 @@
 #include "vector_type.h"
 
-Vec::Vec(size_t system_size)
+Vec::Vec(size_t system_size) : m_type(Type::null)
 {
-	_system_size = system_size;
-	_vec = new double[_system_size];
+	m_data.resize(system_size, 0);
 }
 
-Vec::Vec(const Vec& vec)
+Vec::Vec(size_t system_size, size_t seed) : m_type(Type::set)
 {
-	_type = vec._type;
-	_code = vec._code;
-	_system_size = vec._system_size;
-
-	if (_system_size > 0)
-	{
-		_vec = new double[_system_size];
-		for (size_t i = 0; i < _system_size; i++)
-			_vec[i] = vec._vec[i];
+	m_data.resize(system_size, 0);
+	auto sw = 0;
+	for (auto i = 0, c = 0; i < m_data.size(); i++, c++) {
+		if (c == seed) {
+			sw ^= 1;
+			c = -1;
+		}
+		m_data[i] = sw;
 	}
 }
 
-Vec::Vec(vec_type type, double* vec, size_t system_size)
+Vec::Vec(Type type, double value, size_t system_size) : m_type(Type::null)
 {
-	_type = type;
-	_system_size = system_size;
-
-	_vec = new double[_system_size];
-	for (size_t i = 0; i < _system_size; i++)
-		_vec[i] = vec[i];
+	m_data.resize(system_size, value);
 }
 
-Vec::Vec(vec_type type, byte_t code)
+bool Vec::operator==(const Vec& vec) const
 {
-	_type = type;
-	_code = code;
+	return m_type == vec.m_type && m_data == vec.m_data;
 }
 
-Vec::Vec(vec_type type, double value, size_t system_size)
+bool Vec::operator!=(const Vec& vec) const
 {
-	_type = type;
-	_system_size = system_size;
-
-	_vec = new double[_system_size];
-	for (size_t i = 0; i < _system_size; i++)
-		_vec[i] = value;
+	return !(*this == vec);
 }
 
-double& Vec::operator[](size_t i) noexcept(false)
+Vec Vec::operator~() const
 {
-	if (i >= _system_size) throw 0x0001;
-	return _vec[i];
+	auto res = *this;
+	for (auto i = 0; i < res.m_data.size(); i++)
+		res.m_data[i] = static_cast<float>(!static_cast<bool>(res.m_data[i]));
+	return res;
 }
 
-bool Vec::operator==(const Vec vec)
+Vec Vec::operator|(const Vec& vec) const
 {
-	if (_type == vec_type::value && vec._type == vec_type::number)
-	{
-		if (this->is_null() && vec._vec[0] == 0) return true;
-		return false;
-	}
-	else if (_type == vec_type::number && vec._type == vec_type::value)
-	{
-		if (vec.is_null() && _vec[0] == 0) return true;
-		return false;
-	}
-	if (_type != vec._type) return false;
-	if (_type == vec_type::operation) if (_code != vec._code) return false;
-	if (_system_size != vec._system_size) return false;
-	for (size_t i = 0; i < _system_size; i++) 
-		if (_vec[i] != vec._vec[i]) return false;
-	return true;
+	return Vec(*this) |= vec;
 }
 
-bool Vec::operator!=(const Vec vec)
+Vec Vec::operator&(const Vec& vec) const
 {
-	if (_type == vec_type::value && vec._type == vec_type::number)
-	{
-		if (this->is_null() && vec._vec[0] == 0) return false;
-		return true;
-	}
-	else if (_type == vec_type::number && vec._type == vec_type::value)
-	{
-		if (vec.is_null() && _vec[0] == 0) return false;
-		return true;
-	}
-	if (_type != vec._type) return true;
-	if (_type == vec_type::operation) if (_code != vec._code) return true;
-	if (_system_size != vec._system_size) return true;
-	for (size_t i = 0; i < _system_size; i++)
-		if (_vec[i] != vec._vec[i]) return true;
-	return false;
+	return Vec(*this) &= vec;
 }
 
-Vec Vec::operator=(const Vec vec)
+Vec Vec::operator^(const Vec& vec) const
 {
-	_type = vec._type;
-	_code = vec._code;
-	_system_size = vec._system_size;
+	return Vec(*this) ^= vec;
+}
 
-	delete[] _vec;
-	_vec = nullptr;
+Vec Vec::operator/(const Vec& vec) const
+{
+	return Vec(*this) /= vec;
+}
 
-	if (_system_size > 0)
-	{
-		_vec = new double[_system_size];
-		for (size_t i = 0; i < _system_size; i++)
-			_vec[i] = vec._vec[i];
-	}
+Vec Vec::operator+(const Vec& vec) const
+{
+	return Vec(*this) += vec;
+}
+
+Vec Vec::operator-() const
+{
+	auto res = *this;
+	for (auto i = 0; i < res.m_data.size(); i++)
+		res.m_data[i] = -res.m_data[i];
+	return res;
+}
+
+Vec Vec::operator-(const Vec& vec) const
+{
+	return Vec(*this) -= vec;
+}
+
+Vec Vec::operator*(const Vec& vec) const
+{
+	return Vec(*this) *= vec;
+}
+
+Vec& Vec::operator|=(const Vec& vec)
+{
+	assert(m_data.size() == vec.m_data.size());
+	for (auto i = 0; i < m_data.size(); i++)
+		m_data[i] = static_cast<float>(static_cast<bool>(m_data[i]) | static_cast<bool>(vec.m_data[i]));
 	return *this;
 }
 
-Vec Vec::operator~()
+Vec& Vec::operator&=(const Vec& vec)
 {
-	Vec result(vec_type::set, 0.0, _system_size);
-	for (size_t i = 0; i < _system_size; i++) 
-		result._vec[i] = !(bool)_vec[i];
-	return result;
+	assert(m_data.size() == vec.m_data.size());
+	for (auto i = 0; i < m_data.size(); i++)
+		m_data[i] = static_cast<float>(static_cast<bool>(m_data[i]) & static_cast<bool>(vec.m_data[i]));
+	return *this;
 }
 
-Vec Vec::operator|(Vec vec)
+Vec& Vec::operator^=(const Vec& vec)
 {
-	Vec result(vec_type::set, 0.0, _system_size);
-
-	if (_system_size != vec._system_size) return result;
-
-	for (size_t i = 0; i < _system_size; i++) result._vec[i] = (bool)_vec[i] | (bool)vec._vec[i];
-	return result;
+	assert(m_data.size() == vec.m_data.size());
+	for (auto i = 0; i < m_data.size(); i++)
+		m_data[i] = static_cast<float>(static_cast<bool>(m_data[i]) & !static_cast<bool>(vec.m_data[i]));
+	return *this;
 }
 
-Vec Vec::operator&(Vec vec)
+Vec& Vec::operator-=(const Vec& vec)
 {
-	Vec result(vec_type::set, 0.0, _system_size);
-
-	if (_system_size != vec._system_size) return result;
-
-	for (size_t i = 0; i < _system_size; i++) result._vec[i] = (bool)_vec[i] & (bool)vec._vec[i];
-	return result;
+	assert(m_data.size() == vec.m_data.size());
+	for (auto i = 0; i < m_data.size(); i++)
+		m_data[i] -= vec.m_data[i];
+	return *this;
 }
 
-Vec Vec::operator%(Vec vec)
+Vec& Vec::operator+=(const Vec& vec)
 {
-	Vec result(vec_type::set, 0.0, _system_size);
-
-	if (_system_size != vec._system_size) return result;
-
-	for (size_t i = 0; i < _system_size; i++) result._vec[i] = (bool)_vec[i] & !(bool)vec._vec[i];
-	return result;
+	assert(m_data.size() == vec.m_data.size());
+	for (auto i = 0; i < m_data.size(); i++)
+		m_data[i] += vec.m_data[i];
+	return *this;
 }
 
-Vec Vec::operator+(Vec vec)
+Vec& Vec::operator*=(const Vec& vec)
 {
-	Vec result((_type < vec._type ? _type : vec._type), 0.0, _system_size);
-
-	if (_system_size != vec._system_size) return result;
-
-	for (size_t i = 0; i < _system_size; i++) result._vec[i] = _vec[i] + vec._vec[i];
-	return result;
+	assert(m_data.size() == vec.m_data.size());
+	for (auto i = 0; i < m_data.size(); i++)
+		m_data[i] *= vec.m_data[i];
+	return *this;
 }
 
-Vec Vec::operator-()
+Vec& Vec::toQuantity()
 {
-	Vec result(_type, 0.0, _system_size);
-
-	for (size_t i = 0; i < _system_size; i++) result._vec[i] = -_vec[i];
-	return result;
+	m_type = Type::number;
+	return *this;
 }
 
-Vec Vec::operator-(Vec vec)
+Vec& Vec::operator/=(const Vec& vec)
 {
-	Vec result((_type < vec._type ? _type : vec._type), 0.0, _system_size);
-
-	if (_system_size != vec._system_size) return result;
-
-	for (size_t i = 0; i < _system_size; i++) result._vec[i] = _vec[i] - vec._vec[i];
-	return result;
-}
-
-Vec Vec::operator*(Vec vec)
-{
-	Vec result((_type < vec._type ? _type : vec._type), 0.0, _system_size);
-
-	if (_system_size != vec._system_size) return result;
-
-	for (size_t i = 0; i < _system_size; i++) result._vec[i] = _vec[i] * vec._vec[i];
-	return result;
-}
-
-Vec Vec::operator/(Vec vec)
-{
-	Vec result(_type, 0.0, _system_size);
-
-	if (_system_size != vec._system_size) return result;
-
-	for (size_t i = 0; i < _system_size; i++) result._vec[i] = _vec[i] / vec._vec[i];
-	return result;
-}
-
-vec_type Vec::type()
-{
-	return _type;
-}
-
-void Vec::type(vec_type type)
-{
-	_type = type;
-}
-
-double Vec::value()
-{
-	if (_type != vec_type::number) return 0.0;
-	return _vec[0];
-}
-
-void Vec::value(double value)
-{
-	for (size_t i = 0; i < _system_size; i++)
-		_vec[i] = value;
-}
-
-byte_t Vec::code()
-{
-	return _code;
-}
-
-void Vec::code(byte_t code)
-{
-	_code = code;
-}
-
-bool Vec::is(vec_type type, byte_t code)
-{
-	return _type == type && _code == code;
-}
-
-bool Vec::is_null() const
-{
-	for (size_t i = 0; i < _system_size; i++)
-		if (_vec[i] != 0) return false;
-	return true;
-}
-
-/*bool vector_type::equal(int type, vector<double> vec)
-{
-	if (this->type != type) return false;
-	if (this->vec != vec) return false;
-	return true;
-}*/
-
-size_t Vec::size()
-{
-	return _system_size;
-}
-
-Vec::~Vec()
-{
-	delete[] _vec;
+	assert(m_data.size() == vec.m_data.size());
+	for (auto i = 0; i < m_data.size(); i++)
+		m_data[i] /= vec.m_data[i];
+	return *this;
 }

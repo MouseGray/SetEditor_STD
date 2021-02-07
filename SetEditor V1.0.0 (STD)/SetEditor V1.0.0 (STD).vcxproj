@@ -197,8 +197,6 @@
     <ClCompile Include="RPProcessor.cpp" />
     <ClCompile Include="StateWindow.cpp" />
     <ClCompile Include="TaskWindow.cpp" />
-    <ClCompile Include="TermTool.cpp" />
-    <ClCompile Include="Transforms.cpp" />
     <ClCompile Include="vector_type.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -226,11 +224,6 @@
     <ClInclude Include="Operations.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="TermResurses.h" />
-    <ClInclude Include="TermTool.h" />
-    <ClInclude Include="Transforms.h">
-      <SubType>
-      </SubType>
-    </ClInclude>
     <ClInclude Include="UserInfo.h" />
     <ClInclude Include="vector_type.h" />
     <ClInclude Include="WinClasses.h" />

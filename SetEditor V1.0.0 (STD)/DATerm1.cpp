@@ -126,25 +126,21 @@ bool Term::operator>=(const Term& term) const
 Term& Term::operator<<(Term* term)
 {
 	m_subTerms.push_back(term);
-	return *this;
 }
 
 Term& Term::operator<<(const char value)
 {
 	m_subTerms.push_back(new Term(value));
-	return *this;
 }
 
 Term& Term::operator<<(const float value)
 {
 	m_subTerms.push_back(new Term(value));
-	return *this;
 }
 
 Term& Term::operator<<(const action value)
 {
 	m_subTerms.push_back(new Term(value));
-	return *this;
 }
 
 Term* Term::operator>>(const int pos)
@@ -176,6 +172,13 @@ bool Term::empty() const { return m_subTerms.empty(); }
 void Term::trim()
 {
 	m_subTerms.clear();
+}
+
+void Term::swap(const int pos_1, const int pos_2)
+{
+	auto tmp = m_subTerms[pos_1];
+	m_subTerms[pos_1] = m_subTerms[pos_2];
+	m_subTerms[pos_2] = tmp;
 }
 
 Term* Term::copy() const
