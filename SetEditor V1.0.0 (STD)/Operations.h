@@ -1,6 +1,5 @@
 #pragma once
 #include "DATLib.h"
-#include "Header.h"
 
 #define ERR_T_NO_ERROR 0x0000
 #define ERR_T_NULL_PTR 0x0001
@@ -76,7 +75,7 @@ namespace normalization
 namespace transformation
 {
     /*
-    * Complement Nullser
+    * Complement Nullset
     * Complement Uniset
     */
     Term* complementVariable(const Term* term, char oldVar, char newVar);

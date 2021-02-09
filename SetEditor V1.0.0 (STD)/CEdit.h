@@ -83,8 +83,6 @@ public:
 	void Erase(size_t off, size_t count);
 	void _Erase(size_t off, size_t count);
 	int Insert(size_t off, const string& text, const vector<int>& codes);
-	void _Insert(size_t off, const string& text, const vector<int>& codes);
-	void AddUndo();
 	bool EraseSelect();
 	// Команды управления
 	bool ToLeft();
@@ -108,12 +106,6 @@ public:
 	void SetCaretPosition(bool off = true);
 	int GetCaretHeight();
 	void UpdateScroll();
-	void UpdateOverline();
-
-	void PrepareText(string* text, vector<int>* codes);
-	int GetRemoveTextOverline(const string& text);
-	int GetTextOverline(int start, int end);
-	bool IsCorrectChar(char c);
 
 	int GetLeftSelectU(int pos_U);
 	int GetRightSelectU(int pos_U);

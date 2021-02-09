@@ -377,7 +377,7 @@ Term* transformation::parantheses(const Term* term, action top, action bottom)
 
 		for (auto i = 0; i < term->size(); i++)
 			if (*term->get(i) == bottom) count *= term->get(i)->size();
-		if (count == 0) return nullptr;
+		if (count == 1) return nullptr;
 
 		auto res = new Term(bottom);
 		for (auto i = 0; i < count; i++)

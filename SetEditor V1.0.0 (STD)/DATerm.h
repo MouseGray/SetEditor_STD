@@ -70,6 +70,8 @@ public:
 	void trim();
 
 	Term* copy() const;
+
+	std::string toString(int _off = 0);
 private:
 	union Value {
 		char variable;

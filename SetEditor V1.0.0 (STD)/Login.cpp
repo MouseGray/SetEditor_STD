@@ -1,7 +1,10 @@
 #include "Header.h"
 #include "WinClasses.h"
 #include "resource.h"
-#include "DATLib.h"
+
+#include "TransformTable.h"
+#include "Tokenizer.h"
+
 // ==================== =========== ==================== //
 
 Config MainConfig;
@@ -111,6 +114,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	if (!DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_FORMVIEW), WND, LoginProc, NULL)) DestroyWindow(WND);
 
 	MSG msg;
+	
+	AllocConsole();
+
+	FILE* fDummy;
+	freopen_s(&fDummy, "CONOUT$", "w", stdout);
 
 	while (GetMessage(&msg, nullptr, 0, 0))
 	{
@@ -1534,7 +1542,37 @@ void MainBridge(CEdit* edit)
 	auto segments = std::vector<std::vector<std::pair<int, int>>>();
 	for (auto l : lines)
 		segments.push_back(getSegments(edit->data(), l.first, l.second));
+
+	Tokenizer tok(edit->data());
 	
+	if (!tok.getErrors().empty()) {
+		for (auto e : tok.getErrors()) {
+			for (auto i = get<0>(e); i < get<1>(e); i++)
+				edit->pushError(std::make_pair(i, get<2>(e)));
+		}
+		return;
+	}
+
+	while (tok.next()) {
+		auto err_1 = TermTool::check(edit->data(), tok.first);
+		if (err_1.second != -1) {
+			edit->pushError(std::make_pair(err_1.first, err_1.second));
+			break;
+		}
+		auto err_2 = TermTool::check(edit->data(), tok.second);
+		if (err_2.second != -1) {
+			edit->pushError(std::make_pair(err_2.first, err_2.second));
+			break;
+		}
+
+		auto first = TermTool::createTerm(edit->data().substr(tok.first.first, tok.first.second - tok.first.first));
+		auto second = TermTool::createTerm(edit->data().substr(tok.second.first, tok.second.second - tok.second.first));
+
+		auto __ = TransformTable();
+		if (!__.start(first, second))
+			edit->pushError(std::make_pair(tok.first.second, 3));
+	}
+#if 0
 	for (auto l: segments)
 	{
 		for (auto i = 1; i < l.size(); i++)
@@ -1549,9 +1587,17 @@ void MainBridge(CEdit* edit)
 				edit->pushError(std::make_pair(err_2.first, err_2.second));
 				break;
 			}
+
+			auto first = TermTool::createTerm(edit->data().substr(l[i - 1].first, l[i - 1].second - l[i - 1].first));
+			auto second = TermTool::createTerm(edit->data().substr(l[i].first, l[i].second - l[i].first));
+
+			auto __ = TransformTable();
+			if (!__.start(first, second)) 
+				edit->pushError(std::make_pair(l[i - 1].second, 3));
+
 		}
 	}
-
+#endif
 	// ќценка
 	int errors = 0;
 	int warnings = 0;

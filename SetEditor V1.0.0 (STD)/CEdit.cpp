@@ -137,6 +137,7 @@ void CEdit::W_MouseMove(int x, int y, bool shift)
 		}
 	}
 	else {
+#if 0
 		if (fact && tempCaretPos_U < data().size())
 		{
 			if (data()[tempCaretPos_U] == '=') {
@@ -159,6 +160,7 @@ void CEdit::W_MouseMove(int x, int y, bool shift)
 			ShowTipCallback(hWnd, 0, 0, 0, nullptr);
 			startSelectPos = endSelectPos = 0;
 		}
+#endif
 	}
 }
 
@@ -213,7 +215,6 @@ void CEdit::W_Delete()
 
 void CEdit::W_Char(char c)
 {
-	if (!IsCorrectChar(c)) return;
 	EraseSelect();
 	if (c == '\r') c = '\n';
 	string character;
@@ -333,68 +334,22 @@ void CEdit::W_Scroll(int act, int pos)
 
 void CEdit::Erase(size_t off, size_t count)
 {
-	if (data()[off] == '}') return;
-	AddUndo();
-	int overline = GetRemoveTextOverline(data().substr(off, count));
 	_Erase(off, count);
-	for (; overline > 0; overline--) {
-		_Insert(off, "}", vector<int>(1, 0));
-	}
-	UpdateOverline();
 	UpdateScroll();
 }
 
 void CEdit::_Erase(size_t off, size_t count)
 {
-	// Получить позицию сегмента off
-	int startPos_S = GetSegmentPos(off);
-	// Получить позицию сегмента off + count
-	int endPos_S = GetSegmentPos(off + count);
-	vector<Segment> tempSegments;
-	for (size_t i = startPos_S; i < endPos_S; i++) tempSegments.push_back(segments[i]);
-
-	if (!tempSegments.empty()) this->segments.erase(this->segments.begin() + startPos_S, this->segments.begin() + startPos_S + tempSegments.size());
-
-	//undo.back().top().CreateRemove(m_cursor, m_sCursor, startPos_S, m_buffer.substr(off, count), vector<int>(codes.begin() + off, codes.begin() + off + count), tempSegments);
 	erase(count);
 	m_metrics.update(0, data());
-	//this->m_buffer.erase(this->m_buffer.begin() + off, this->m_buffer.begin() + off + count);
-	//this->codes.erase(this->codes.begin() + off, this->codes.begin() + off + count);
 }
 
 int CEdit::Insert(size_t off, const string& text, const vector<int>& codes)
 {
 	string paste = text;
-	vector<int> pasteCode = codes;
-	PrepareText(&paste, &pasteCode);
-	_Insert(off, paste, pasteCode);
-	UpdateOverline();
-	UpdateScroll();
-	return paste.size();
-}
-
-void CEdit::_Insert(size_t off, const string& text, const vector<int>& codes)
-{
-	// Получить позицию сегмента off
-	int startPos_S = GetSegmentPos(off);
-	// Получить позицию сегмента off + count
-	int count = 0;
-	for (auto& c : text) {
-		if (c == '=') count++;
-	}
-
-	this->segments.insert(this->segments.begin() + startPos_S, count, Segment());
-
-	//undo.back().top().CreateAdd(m_cursor, m_sCursor, startPos_S, text.size(), count);
 	insert(text);
 	m_metrics.update(0, data());
-	//this->m_buffer.insert(this->m_buffer.begin() + off, text.begin(), text.end());
-	//this->codes.insert(this->codes.begin() + off, codes.begin(), codes.end());
-}
-
-void CEdit::AddUndo()
-{
-
+	return 0;
 }
 
 bool CEdit::EraseSelect()
@@ -677,98 +632,6 @@ void CEdit::UpdateScroll()
 		pageOffset_U = scrollRange;
 		SetScrollPos(hWnd, SB_VERT, pageOffset_U, true);
 	}
-}
-
-void CEdit::UpdateOverline()
-{
-	int overline = 0;
-	for (size_t i = 0; i < data().size(); i++) {
-		if (data()[i] == '{') overline++;
-		if (data()[i] == '}') {
-			if (!overline) {
-				_Erase(i, 1);
-				i--;
-				continue;
-			}
-			overline--;
-		}
-		if (data()[i] == '=' || data()[i] == '\n') {
-			for (; overline > 0; overline--) {
-				_Insert(i, "}", vector<int>(1, 0));
-				i++;
-			}
-		}
-	}
-	for (; overline > 0; overline--) {
-		_Insert(data().size(), "}", vector<int>(1, 0));
-	}
-}
-
-void CEdit::PrepareText(string* text, vector<int>* codes)
-{
-	int overline = 0;
-	for (size_t i = 0; i < text->size(); i++) {
-		if (text->at(i) == '{') overline++;
-		if (text->at(i) == '}') {
-			if (!overline) {
-				text->erase(text->begin() + i);
-				codes->erase(codes->begin() + i);
-				i--;
-				continue;
-			}
-			overline--;
-		}
-		if (text->at(i) == '=' || text->at(i) == '\n') {
-			for (int j = 0; j < overline; j++) {
-				text->insert(text->begin() + i, '}');
-				codes->insert(codes->begin() + i, 0);
-				i++;
-			}
-			overline = 0;
-		}
-	}
-	for (int j = 0; j < overline; j++) {
-		text->insert(text->end(), '}');
-		codes->insert(codes->end(), 0);
-	}
-}
-
-int CEdit::GetRemoveTextOverline(const string& text)
-{
-	int result = 0;
-	int overline = 0;
-	for (size_t i = 0; i < text.size(); i++) {
-		if (text[i] == '{') overline++;
-		if (text[i] == '}') {
-			if (!overline) {
-				result++;
-				continue;
-			}
-			overline--;
-		}
-	}
-	return result;
-}
-
-int CEdit::GetTextOverline(int start, int end)
-{
-	int overline = 0;
-	for (size_t i = 0; i < data().size(); i++) {
-		if (data()[i] == '{') overline++;
-		if (data()[i] == '}') overline--;
-	}
-	return overline;
-}
-
-bool CEdit::IsCorrectChar(char c)
-{
-	if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
-		|| c == '.' || c == '!' || c == '@' || c == '#'
-		|| c == '$' || c == '^' || c == '-' || c == '+'
-		|| c == '*' || c == '/' || c == '(' || c == ')'
-		|| c == '|'
-		|| c >= '0' && c <= '9' || c == '\r' || c == '=') return true;
-	return false;
 }
 
 int CEdit::GetLeftSelectU(int pos_U)

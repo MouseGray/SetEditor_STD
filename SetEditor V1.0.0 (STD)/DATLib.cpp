@@ -485,6 +485,15 @@ void TermTool::collapse(Term* dest, Term* src)
 	TermTool::remove(tmp_top);
 }
 
+void TermTool::implement(Term* term, std::pair<Term*, std::vector<int>> part)
+{
+	if (part.second.empty()) {
+		*term = *part.first;
+		return;
+	}
+	implement(term->get(part.second.front()), std::make_pair(part.first, std::vector<int>(part.second.begin() + 1, part.second.end())));
+}
+
 TermCalculator::TermCalculator(const std::string sets)
 {
 	m_system_size = (1 << sets.size());

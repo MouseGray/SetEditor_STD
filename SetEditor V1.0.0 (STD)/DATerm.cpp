@@ -183,6 +183,34 @@ Term* Term::copy() const
 	return new Term(m_type, m_value);
 }
 
+std::string Term::toString(int _off)
+{
+	std::string result;
+	result.insert(result.begin(), _off, ' ');
+	switch (m_type) {
+		case Type::Undefined:
+			result += "type: Undefined value: 0";
+			break;
+		case Type::Variable:
+			result += std::string("type: Variable value: ") + m_value.variable;
+			break;
+		case Type::Number:
+			result += "type: Number value: " + std::to_string(m_value.number);
+			break;
+		case Type::Operation:
+			result += std::string("type: Operation value: ") + static_cast<char>(m_value.operation);
+			break;
+	}
+	result += '\n';
+
+	for (auto e : m_subTerms)
+	{
+		result += e->toString(_off + 1);
+	}
+
+	return result;
+}
+
 bool Term::equal(const Term& term) const
 {
 	if (m_type != term.m_type) return false;

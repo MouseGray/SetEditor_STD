@@ -4,7 +4,6 @@
 #include <map>
 
 #include "DATerm.h"
-#include "Operation.h"
 #include "vector_type.h"
 
 class TermTool final
@@ -27,6 +26,8 @@ public:
 	static void removeChildren(Term* term);
 
 	static void collapse(Term* dest, Term* src);
+
+	static void implement(Term* term, std::pair<Term*, std::vector<int>> part);
 };
 
 class TermCalculator final

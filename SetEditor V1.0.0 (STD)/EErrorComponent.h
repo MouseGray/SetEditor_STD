@@ -9,6 +9,7 @@
 
 class EErrorComponent : public ELabelComponent
 {
+	using error = std::tuple<size_t, size_t, int>;
 	enum class ErrorType : char {
 		Fixed,
 		Error
