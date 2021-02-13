@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <assert.h>
+#include <ranges>
 
 #include "Operation.h"
 
@@ -66,6 +67,9 @@ public:
 	int size() const;
 
 	bool empty() const;
+
+	std::vector<Term*>::const_iterator begin() const;
+	std::vector<Term*>::const_iterator end() const;
 
 	void trim();
 

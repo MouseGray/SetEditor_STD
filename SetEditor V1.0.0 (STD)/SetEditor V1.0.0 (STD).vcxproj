@@ -84,6 +84,7 @@
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -110,6 +111,7 @@
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -133,6 +135,7 @@
       <AdditionalIncludeDirectories>C:\Program Files %28x86%29\MySQL\MySQL Server 5.7\include;C:\Program Files %28x86%29\MySQL\Connector C++ 8.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -154,6 +157,7 @@
       <AdditionalIncludeDirectories>C:\Program Files %28x86%29\MySQL\MySQL Server 5.7\include;C:\Program Files %28x86%29\MySQL\Connector C++ 8.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -169,6 +173,7 @@
   <ItemGroup>
     <ClCompile Include="CEdit.cpp" />
     <ClCompile Include="CheckSyntax.cpp" />
+    <ClCompile Include="CombinationGenerator.cpp" />
     <ClCompile Include="Controls.cpp" />
     <ClCompile Include="DataBase.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
@@ -204,6 +209,7 @@
   <ItemGroup>
     <ClInclude Include="CEdit.h" />
     <ClInclude Include="CheckSyntax.h" />
+    <ClInclude Include="CombinationGenerator.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="Controls.h" />
     <ClInclude Include="CTable.h" />

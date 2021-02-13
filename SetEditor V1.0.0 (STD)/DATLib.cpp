@@ -7,6 +7,7 @@ std::pair<int, int> TermTool::check(const std::string& data, const std::pair<int
 	auto end = location.second - 1;
 	auto first_point = true;
 	auto parentheses = std::stack<char>();
+	auto isOpenQuantity = true;
 
 	for (auto index = location.first; index < location.second; index++)
 	{
@@ -24,6 +25,8 @@ std::pair<int, int> TermTool::check(const std::string& data, const std::pair<int
 				auto nextValue = data[nextIndex];
 				if (isSetOperation(nextValue)) continue;
 				if (isClosingParenthese(nextValue)) continue;
+				/* added */
+				if (nextValue == '|' && isOpenQuantity == false) continue;
 
 				return std::make_pair(nextIndex, nextValue);
 			}
@@ -111,7 +114,9 @@ std::pair<int, int> TermTool::check(const std::string& data, const std::pair<int
 				if (variableType(nextValue) == ExpressionType::Num) continue;
 			}
 			if (isDigit(nextValue)) continue;
-			if (nextValue == Faction || nextValue == Quantity) continue;
+			if (nextValue == Faction) continue;
+			/* added */
+			if (nextValue == '|' && isOpenQuantity == true) continue;
 
 			return std::make_pair(nextIndex, nextValue);
 		}
@@ -132,7 +137,9 @@ std::pair<int, int> TermTool::check(const std::string& data, const std::pair<int
 				if (variableType(nextValue) == ExpressionType::Num) continue;
 			}
 			if (isDigit(nextValue)) continue;
-			if (nextValue == Faction || nextValue == Quantity) continue;
+			if (nextValue == Faction) continue;
+			/* added */
+			if (nextValue == '|' && isOpenQuantity == true) continue;
 
 			return std::make_pair(nextIndex, nextValue);;
 		}
@@ -171,6 +178,8 @@ std::pair<int, int> TermTool::check(const std::string& data, const std::pair<int
 			auto nextValue = data[nextIndex];
 			if (isSetOperation(nextValue)) continue;
 			if (isClosingParenthese(nextValue)) continue;
+			/* added */
+			if (nextValue == '|' && isOpenQuantity == false) continue;
 
 			return std::make_pair(nextIndex, nextValue);
 		}
@@ -185,6 +194,8 @@ std::pair<int, int> TermTool::check(const std::string& data, const std::pair<int
 			if (isDigit(nextValue)) continue;
 			if (isUnaryNumOperation(nextValue)) continue;
 			if (isOpenParenthese(nextValue)) continue;
+			/* added */
+			if (nextValue == '|' && isOpenQuantity == true) continue;
 
 			return std::make_pair(nextIndex, nextValue);
 		}
@@ -202,47 +213,52 @@ std::pair<int, int> TermTool::check(const std::string& data, const std::pair<int
 			if (isSetOperation(nextValue)) continue;
 			if (isUnaryNumOperation(nextValue) || isBinaryNumOperation(nextValue)) continue;
 			if (isClosingParenthese(nextValue)) continue;
+			/* added */
+			if (nextValue == '|' && isOpenQuantity == false) continue;
 
 			return std::make_pair(nextIndex, static_cast<int>(nextValue));
 		}
-		if (value == Quantity)
+		if (value == '|')
 		{
-			parentheses.push(value);
-			if (area == Area::Set)
-				return std::make_pair(index, static_cast<int>(TextError::UnexpectedNumOperation));
+			isOpenQuantity = !isOpenQuantity;
 
-			area = Area::Set;
-			if (index == end)
-				return std::make_pair(index, static_cast<int>(TextError::NotFoundRightOperand));
+			if (!isOpenQuantity) {
+				parentheses.push(value);
+				if (area == Area::Set)
+					return std::make_pair(index, static_cast<int>(TextError::UnexpectedNumOperation));
 
-			auto nextValue = data[nextIndex];
-			if (isVariable(nextValue))
-			{
-				if (variableType(nextValue) == ExpressionType::Set) continue;
+				area = Area::Set;
+				if (index == end)
+					return std::make_pair(index, static_cast<int>(TextError::NotFoundRightOperand));
+
+				auto nextValue = data[nextIndex];
+				if (isVariable(nextValue))
+				{
+					if (variableType(nextValue) == ExpressionType::Set) continue;
+				}
+				if (nextValue == Faction || nextValue == Complement) continue;
+
+				return std::make_pair(nextIndex, static_cast<int>(nextValue));
 			}
-			if (nextValue == Faction || nextValue == Complement) continue;
+			else {
+				if (area == Area::Num)
+					return std::make_pair(index, static_cast<int>(TextError::UnexpectedSetOperation));
 
-			return std::make_pair(nextIndex, static_cast<int>(nextValue));
-		}
-		if (value == QuantityEnd)
-		{
-			if (area == Area::Num)
-				return std::make_pair(index, static_cast<int>(TextError::UnexpectedSetOperation));
+				area = Area::Num;
+				if (parentheses.empty())
+					return std::make_pair(index, static_cast<int>(TextError::NotFoundOpenParenthese));
+				if (parentheses.top() != /*invertedParenthese(value)*/ '|')
+					return std::make_pair(index, static_cast<int>(TextError::UnexpectedClosingParenthese));
+				parentheses.pop();
 
-			area = Area::Num;
-			if (parentheses.empty())
-				return std::make_pair(index, static_cast<int>(TextError::NotFoundOpenParenthese));
-			if (parentheses.top() != invertedParenthese(value))
-				return std::make_pair(index, static_cast<int>(TextError::UnexpectedClosingParenthese));
-			parentheses.pop();
+				if (index == end) continue;
 
-			if (index == end) continue;
+				auto nextValue = data[nextIndex];
+				if (isUnaryNumOperation(nextValue) || isBinaryNumOperation(nextValue)) continue;
+				if (nextValue == FactionEnd) continue;
 
-			auto nextValue = data[nextIndex];
-			if (isUnaryNumOperation(nextValue) || isBinaryNumOperation(nextValue)) continue;
-			if (nextValue == FactionEnd) continue;
-
-			return std::make_pair(nextIndex, static_cast<int>(nextValue));
+				return std::make_pair(nextIndex, static_cast<int>(nextValue));
+			}
 		}
 	}
 	if (!parentheses.empty())
@@ -347,6 +363,7 @@ Term* TermTool::createTerm(const std::string& str)
 				*opts.top() << result;
 				result = opts.top();
 				opts.pop();
+				break;
 			}
 			case Faction:
 			{
@@ -384,6 +401,46 @@ Term* TermTool::createTerm(const std::string& str)
 	}
 
 	return result;
+}
+
+// +----------------+   +----------------+
+// |  Unary minus   |   |  Binary minus  |
+// +----------------+   +----------------+
+// | [begin]        |   | not [begin]    |
+// | '('            |   | 'A'..'Z'       |
+// +----------------+   | '0'..'9'       |
+//                      | '|'            |
+//                      | ')'            |
+//                      +----------------+
+std::string TermTool::toDeterminedForm(const std::string& data, const std::pair<int, int>& location)
+{
+	auto res = std::string();
+	auto isInside = false;
+	for (auto index = location.first; index < location.second; index++) {
+		auto ch = data[index];
+		if (ch == '|') {
+			if (isInside) {
+				res += QuantityEnd;
+				isInside = false;
+			}
+			else {
+				res += Quantity;
+				isInside = true;
+			}
+			continue;
+		}
+		if (ch == Minus) {
+			if (index == 0) continue;
+			auto previousCh = data[index - 1];
+			if (isVariable(previousCh) || isDigit(previousCh) || 
+				previousCh == FactionEnd || previousCh == '|') {
+				res += "+-";
+			}
+			continue;
+		}
+		res += ch;
+	}
+	return res;
 }
 
 bool TermTool::isEqual(const Term& left, const Term& right)

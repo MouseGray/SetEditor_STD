@@ -1,4 +1,5 @@
 #include "Operations.h"
+#include <vector>
 
 #if 0
 int T_ChangEqual(term_ptr pTerm_1_1, term_ptr pTerm_1_2, term_ptr pTerm_2_1, term_ptr pTerm_2_2)
@@ -266,6 +267,96 @@ void infinity::duplicates(Term* term, action act)
 		duplicates(term->get(i), act);
 }
 
+// +-----------------+-------------+-------------+
+// |    Operation    | One subterm | Reiteration |
+// +-----------------+-------------+-------------+
+// | Complement		 |      -      |      ?      |
+// | Intersection	 |      +      |      +      |
+// | Union			 |      +      |      +      |
+// | Minus			 |      ?      |      -      |
+// | Subtraction	 |   deleted   |   deleted   |
+// | Addition		 |      +      |      +      |
+// | Multiplication	 |      +      |      +      |
+// | Division		 |      -      |      -      |
+// | Quantity		 |      -      |      ?      |
+// +-----------------+-------------+-------------+
+
+void normalization::normalize(Term* term)
+{
+	normalization::eraseSubtraction(term);
+	normalization::eraseDivision(term);
+	normalization::coefficients(term);
+
+	normalization::collapse(term, Intersection, Nullset);
+	normalization::collapse(term, Union, Uniset);
+	normalization::collapse(term, Multiplication, 0.0f);
+
+	normalization::quantityNullset(term);
+
+	normalization::removeReiteration(term);
+	normalization::removeOneSubterm(term);
+}
+
+void normalization::removeOneSubterm(Term* term)
+{
+	for (auto i = 0; i < term->size(); i++)
+		removeOneSubterm(term->get(i));
+
+	if (*term == Intersection || *term == Union || *term == Addition || *term == Multiplication) {
+		if (term->size() == 1) {
+			auto tmp = term->get(0);
+			*term = *tmp;
+			delete tmp;
+		}
+	}
+}
+
+void normalization::removeReiteration(Term* term)
+{
+	if (*term == Intersection || *term == Union || *term == Addition || *term == Multiplication) {
+		for (auto i = 0; i < term->size(); i++) {
+			auto subTerm = term->get(i);
+			if (term->equal(*subTerm)) {
+				for (auto j = subTerm->size() - 1; j >= 0; j--)
+					*term << (*subTerm >> j);
+				TermTool::remove(subTerm);
+			}
+		}
+	}
+
+	for (auto i = 0; i < term->size(); i++)
+		removeReiteration(term->get(i));
+}
+
+void normalization::eraseSubtraction(Term* term)
+{
+	if (*term == Subtraction)
+	{
+		*term = Multiplication;
+		*term << new Term(-1.0f);
+	}
+
+	for (auto i = 0; i < term->size(); i++)
+		eraseSubtraction(term->get(i));
+}
+
+void normalization::eraseDivision(Term* term)
+{
+	if (*term == Division)
+	{
+		if (term->get_ref(0) == Quantity) {
+			auto tmp = new Term(Division);
+			*tmp << new Term(1.0f);
+			*tmp << (*term >> 1);
+			*term << tmp;
+			*term = Multiplication;
+		}
+	}
+
+	for (auto i = 0; i < term->size(); i++)
+		eraseDivision(term->get(i));
+}
+
 void normalization::quantityNullset(Term* term)
 {
 	if (*term == Quantity)
@@ -303,6 +394,7 @@ void normalization::coefficients(Term* term)
 					TermTool::remove(*term >> marked.top());
 					marked.pop();
 				}
+				*term << sum;
 			}
 			else {
 				TermTool::removeChildren(term);
@@ -315,8 +407,8 @@ void normalization::coefficients(Term* term)
 		auto marked = std::stack<int>();
 		auto x = 1.0f;
 		for (auto i = 0; i < term->size(); i++) {
-			if (*term == Term::Type::Number) {
-				x *= term->get(0)->toNumber();
+			if (*term->get(i) == Term::Type::Number) {
+				x *= term->get(i)->toNumber();
 				marked.push(i);
 			}
 		}
@@ -327,6 +419,7 @@ void normalization::coefficients(Term* term)
 					TermTool::remove(*term >> marked.top());
 					marked.pop();
 				}
+				*term << x;
 			}
 			else {
 				TermTool::removeChildren(term);
@@ -393,14 +486,14 @@ Term* transformation::parantheses(const Term* term, action top, action bottom)
 					for (auto j = 0; j < term->get(i)->size(); j++)
 					{
 						for (auto l = 0; l < tmp; l++)
-							res->get_ref(m++) << term->get(i)->get(j);
+							res->get_ref(m++) << TermTool::copy(term->get(i)->get(j));
 					}
 				}
 				tmp *= term->get(i)->size();
 				continue;
 			}
 			for (size_t m = 0; m < count; m++) 
-				res->get_ref(m) << term->get(i);
+				res->get_ref(m) << TermTool::copy(term->get(i));
 		}
 		return res;
 	}
@@ -425,8 +518,8 @@ Term* transformation::minus(const Term* term)
 	{
 		auto res = new Term(Intersection);
 		auto c = new Term(Complement);
-		*c << term->get(1);
-		*res << term->get(0) << c;
+		*c << TermTool::copy(term->get(1));
+		*res << TermTool::copy(term->get(0)) << c;
 
 		return res;
 	}
@@ -602,55 +695,57 @@ std::vector<Term*> transformation::formulaExcIncX3(const Term* term)
 	}
 	return result;
 }
+#include <iostream>
 
 Term* transformation::indentical(const Term* term)
 {
+	// TODO: check multiply []*[]
 	if (*term == Addition) 
 	{
-		auto colletion = std::vector<std::pair<Term*, float>>();
+		auto collection = std::vector<std::pair<Term*, float>>();
 		for (auto i = 0; i < term->size(); i++)
 		{
 			if (term->get_ref(i) == Quantity) {
 				auto find = false;
-				for (auto e : colletion) {
-					if (TermTool::isEqual(*e.first, term->get_ref(0))) {
+				for (auto e : collection) {
+					if (TermTool::isEqual(*e.first, term->get_ref(i))) {
 						e.second += 1;
 						find = true;
 						break;
 					}
 				}
 				if (!find)
-					colletion.push_back(std::make_pair(term->get(0), 1));
+					collection.push_back(std::make_pair(term->get(i), 1));
 			}
 			if (term->get_ref(i) == Multiplication) {
-				if (term->get(0)->get_ref(0) == Quantity) {
+				if (term->get(i)->get_ref(0) == Quantity) {
 					auto find = false;
-					for (auto e : colletion) {
-						if (TermTool::isEqual(*e.first, term->get(0)->get_ref(0))) {
-							e.second += term->get(0)->get(1)->toNumber();
+					for (auto e : collection) {
+						if (TermTool::isEqual(*e.first, term->get(i)->get_ref(0))) {
+							e.second += term->get(i)->get(1)->toNumber();
 							find = true;
 							break;
 						}
 					}
 					if (!find)
-						colletion.push_back(std::make_pair(term->get(0), term->get(0)->get(1)->toNumber()));
+						collection.push_back(std::make_pair(term->get(i)->get(0), term->get(i)->get(1)->toNumber()));
 				}
 				else {
 					auto find = false;
-					for (auto e : colletion) {
-						if (TermTool::isEqual(*e.first, term->get(0)->get_ref(1))) {
-							e.second += term->get(0)->get(0)->toNumber();
+					for (auto e : collection) {
+						if (TermTool::isEqual(*e.first, term->get(i)->get_ref(1))) {
+							e.second += term->get(i)->get(0)->toNumber();
 							find = true;
 							break;
 						}
 					}
 					if (!find)
-						colletion.push_back(std::make_pair(term->get(0), term->get(0)->get(0)->toNumber()));
+						collection.push_back(std::make_pair(term->get(i)->get(1), term->get(i)->get(0)->toNumber()));
 				}
 			}
 		}
 		auto res = new Term(Addition);
-		for (auto a: colletion) {
+		for (auto a: collection) {
 			if (a.second == 0) continue;
 			if (a.second == 1) *res << TermTool::copy(a.first);
 			else {

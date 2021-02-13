@@ -11,7 +11,7 @@ class Tokenizer final
 		std::vector<std::pair<int, int>> segments;
 	};
 	struct TokenBridge
-	{
+	{  
 		std::pair<int, int> left;
 		std::pair<int, int> right;
 	};
@@ -33,8 +33,6 @@ public:
 private:
 	size_t current_line;
 	size_t current_pos;
-
-	std::pair<int, int> checkOperand(const std::string& data, size_t delimiter_pos, int stop_pos, int direction);
 
 	/* start pos, end pos, error code */
 	std::vector<std::tuple<size_t, size_t, int>> errors;

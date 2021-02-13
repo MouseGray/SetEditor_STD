@@ -9,9 +9,12 @@
 class TermTool final
 {
 public:
+	// TODO: деление на количество
 	static std::pair<int, int> check(const std::string& data, const std::pair<int, int>& location);
 
 	static Term* createTerm(const std::string& str);
+
+	static std::string toDeterminedForm(const std::string& data, const std::pair<int, int>& location);
 
 	static bool isEqual(const Term& left, const Term& right);
 

@@ -173,6 +173,16 @@ int Term::size() const { return static_cast<int>(m_subTerms.size()); }
 
 bool Term::empty() const { return m_subTerms.empty(); }
 
+std::vector<Term*>::const_iterator Term::begin() const
+{
+	return m_subTerms.begin();
+}
+
+std::vector<Term*>::const_iterator Term::end() const
+{
+	return m_subTerms.end();
+}
+
 void Term::trim()
 {
 	m_subTerms.clear();

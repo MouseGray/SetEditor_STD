@@ -1,4 +1,6 @@
 #pragma once
+#include <functional>
+#include <ranges>
 #include "DATLib.h"
 
 #define ERR_T_NO_ERROR 0x0000
@@ -44,6 +46,16 @@ namespace infinity
 
 namespace normalization
 {
+    void normalize(Term* term);
+
+    void removeOneSubterm(Term* term);
+
+    void removeReiteration(Term* term);
+
+    void eraseSubtraction(Term* term);
+
+    void eraseDivision(Term* term);
+
     void quantityNullset(Term* term);
 
     /*

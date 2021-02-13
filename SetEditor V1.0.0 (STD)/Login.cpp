@@ -1553,6 +1553,8 @@ void MainBridge(CEdit* edit)
 		return;
 	}
 
+	auto calculator = TermCalculator("ABC");
+
 	while (tok.next()) {
 		auto err_1 = TermTool::check(edit->data(), tok.first);
 		if (err_1.second != -1) {
@@ -1565,12 +1567,22 @@ void MainBridge(CEdit* edit)
 			break;
 		}
 
-		auto first = TermTool::createTerm(edit->data().substr(tok.first.first, tok.first.second - tok.first.first));
-		auto second = TermTool::createTerm(edit->data().substr(tok.second.first, tok.second.second - tok.second.first));
+		auto first = TermTool::createTerm(TermTool::toDeterminedForm(edit->data(), tok.first));
+		auto second = TermTool::createTerm(TermTool::toDeterminedForm(edit->data(), tok.second));
+
+		if (calculator.calculate(*first) != calculator.calculate(*second)) {
+			edit->pushError(std::make_pair(tok.first.second, 3));
+			break;
+		}
+
+		std::cout << "first:\n" << first->toString();
+		std::cout << "second:\n" << second->toString();
 
 		auto __ = TransformTable();
-		if (!__.start(first, second))
+		if (!__.start(first, second)) {
 			edit->pushError(std::make_pair(tok.first.second, 3));
+			break;
+		}
 	}
 #if 0
 	for (auto l: segments)

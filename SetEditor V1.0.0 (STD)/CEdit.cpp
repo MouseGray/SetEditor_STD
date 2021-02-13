@@ -532,7 +532,8 @@ void CEdit::Paste()
 		if (lptstr != NULL)
 		{
 			auto str = std::string(static_cast<TCHAR*>(hglb));
-			insert<>(str);
+			insert(str);
+			m_metrics.update(0, data());
 			GlobalUnlock(hglb);
 		}
 	}
@@ -542,7 +543,7 @@ void CEdit::Paste()
 	/*EraseSelect();
 	m_cursor = m_sCursor = m_cursor + Insert(m_cursor, bufferText, vector<int>(bufferText.size(), 0));
 	SetCaretPosition();*/
-	Update();
+	// Update();
 }
 
 void CEdit::SetOverline()

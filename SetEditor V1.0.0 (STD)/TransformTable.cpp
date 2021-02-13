@@ -14,28 +14,34 @@ bool TransformTable::start(Term* left, Term* right)
     apply(left, std::vector<int>());
     merge(left, 0, std::set<std::pair<int, int>>(), true);
 
-    stream << "dr1:\n";
+    std::cout << "dr1:\n\n";
     for (auto& a : m_dirtyData)
         for (auto& b : a)
-            stream << b.first->toString();
+            std::cout << b.first->toString();
+    // TODO: remove
 
-    for (auto& a1 : m_dirtyData)
+    /*for (auto& a1 : m_dirtyData)
         for (auto& a2 : a1)
-            delete a2.first;
+            TermTool::remove(a2.first);*/
     m_dirtyData.clear();
 
     m_rightData.push_back(right);
     apply(right, std::vector<int>());
     merge(right, 0, std::set<std::pair<int, int>>(), false);
 
-    stream << "dr2:\n";
+    std::cout << "dr2:\n\n";
     for (auto& a : m_dirtyData)
         for (auto& b : a)
-            stream << b.first->toString();
+            std::cout << b.first->toString();
 
-    for (auto& a1 : m_dirtyData)
+    /*stream << "dr2:\n";
+    for (auto& a : m_dirtyData)
+        for (auto& b : a)
+            stream << b.first->toString();*/
+
+    /*for (auto& a1 : m_dirtyData)
         for (auto& a2 : a1)
-            delete a2.first;
+            TermTool::remove(a2.first);*/
     m_dirtyData.clear();
     auto res = false;
 
@@ -49,15 +55,31 @@ bool TransformTable::start(Term* left, Term* right)
     stream.close();
 
     for (auto& a : m_leftData)
+        normalization::normalize(a);
+
+    for (auto& a : m_rightData)
+        normalization::normalize(a);
+
+    std::cout << "Normalized left:\n";
+    for (auto& a : m_leftData)
+        std::cout << a->toString();
+    std::cout << "Normalized right:\n";
+    for (auto& a : m_rightData)
+        std::cout << a->toString();
+    std::cout << std::endl;
+
+    for (auto& a : m_leftData)
         for (auto& b : m_rightData)
             if (TermTool::isEqual(*a, *b)) {
                 res = true;
             };
 
     for (auto& a : m_leftData)
-        delete a;
+        TermTool::remove(a);
     for (auto& a : m_rightData)
-        delete a;
+        TermTool::remove(a);
+
+    std::cout << "Result: " << res << std::endl;
 
     return res;
 }
@@ -66,80 +88,89 @@ void TransformTable::apply(Term* term, std::vector<int> path)
 {
     auto isFirst = true;
 
-    auto res = transformation::complementVariable(term, Nullset, Uniset);
-    if (res != nullptr) {
-        if (isFirst)
-            m_dirtyData.push_back(std::vector<std::pair<Term*, std::vector<int>>>());
-        m_dirtyData.back().push_back(std::make_pair(res, path));
-    }
-    res = transformation::complementVariable(term, Uniset, Nullset);
+    std::cout << "Null:\n" << term->toString();
+
+    auto res = transformation::complementVariable(term, Uniset, Nullset);
+    //std::cout << "complementVariable:\n" << term->toString();
+
     if (res != nullptr) {
         if (isFirst)
             m_dirtyData.push_back(std::vector<std::pair<Term*, std::vector<int>>>());
         m_dirtyData.back().push_back(std::make_pair(res, path));
     }
     res = transformation::complementExpression(term);
+    //std::cout << "complementExpression:\n" << term->toString();
     if (res != nullptr) {
         if (isFirst)
             m_dirtyData.push_back(std::vector<std::pair<Term*, std::vector<int>>>());
         m_dirtyData.back().push_back(std::make_pair(res, path));
     }
     res = transformation::parantheses(term, Union, Intersection);
+    //std::cout << "parantheses Union Intersection:\n" << term->toString();
     if (res != nullptr) {
         if (isFirst)
             m_dirtyData.push_back(std::vector<std::pair<Term*, std::vector<int>>>());
         m_dirtyData.back().push_back(std::make_pair(res, path));
     }
     res = transformation::parantheses(term, Intersection, Union);
+    //std::cout << "parantheses Intersection Union:\n" << term->toString();
     if (res != nullptr) {
         if (isFirst)
             m_dirtyData.push_back(std::vector<std::pair<Term*, std::vector<int>>>());
         m_dirtyData.back().push_back(std::make_pair(res, path));
     }
     res = transformation::parantheses(term, Multiplication, Addition);
+    //std::cout << "parantheses Multiplication Addition:\n" << term->toString();
     if (res != nullptr) {
         if (isFirst)
             m_dirtyData.push_back(std::vector<std::pair<Term*, std::vector<int>>>());
         m_dirtyData.back().push_back(std::make_pair(res, path));
     }
     res = transformation::unisetComplement(term);
+    //std::cout << "unisetComplement:\n" << term->toString();
     if (res != nullptr) {
         if (isFirst)
             m_dirtyData.push_back(std::vector<std::pair<Term*, std::vector<int>>>());
         m_dirtyData.back().push_back(std::make_pair(res, path));
     }
     res = transformation::minus(term);
+    //std::cout << "minus:\n" << term->toString();
     if (res != nullptr) {
         if (isFirst)
             m_dirtyData.push_back(std::vector<std::pair<Term*, std::vector<int>>>());
         m_dirtyData.back().push_back(std::make_pair(res, path));
     }
     res = transformation::opposite(term, Intersection, Nullset);
+    //std::cout << "opposite Intersection:\n" << term->toString();
     if (res != nullptr) {
         if (isFirst)
             m_dirtyData.push_back(std::vector<std::pair<Term*, std::vector<int>>>());
         m_dirtyData.back().push_back(std::make_pair(res, path));
     }
     res = transformation::opposite(term, Union, Uniset);
+    //std::cout << "opposite Union:\n" << term->toString();
     if (res != nullptr) {
         if (isFirst)
             m_dirtyData.push_back(std::vector<std::pair<Term*, std::vector<int>>>());
         m_dirtyData.back().push_back(std::make_pair(res, path));
     }
     res = transformation::indentical(term);
+    //std::cout << "indentical:\n" << term->toString();
     if (res != nullptr) {
         if (isFirst)
             m_dirtyData.push_back(std::vector<std::pair<Term*, std::vector<int>>>());
         m_dirtyData.back().push_back(std::make_pair(res, path));
     }
     auto vres = transformation::formulaExcIncX2(term);
-    if (res != nullptr) {
+    //std::cout << "formulaExcIncX2:\n" << term->toString();
+    if (!vres.empty()) {
         if (isFirst)
             m_dirtyData.push_back(std::vector<std::pair<Term*, std::vector<int>>>());
         m_dirtyData.back().push_back(std::make_pair(res, path));
     }
     vres = transformation::formulaExcIncX3(term);
-    if (res != nullptr) {
+    //std::cout << "formulaExcIncX3:\n" << term->toString();
+    if (!vres.empty()) {
         if (isFirst)
             m_dirtyData.push_back(std::vector<std::pair<Term*, std::vector<int>>>());
         m_dirtyData.back().push_back(std::make_pair(res, path));

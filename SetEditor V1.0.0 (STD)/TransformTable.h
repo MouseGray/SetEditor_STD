@@ -2,6 +2,8 @@
 
 #include <set>
 #include <vector>
+#include <iostream>
+
 #include "Operations.h"
 
 class TransformTable
