@@ -183,6 +183,7 @@
     </ClCompile>
     <ClCompile Include="DATLib.cpp" />
     <ClCompile Include="EConnectComponent.cpp" />
+    <ClCompile Include="EEditor.cpp" />
     <ClCompile Include="EErrorComponent.cpp" />
     <ClCompile Include="EFace.cpp" />
     <ClCompile Include="ELabelComponent.cpp" />
@@ -192,6 +193,7 @@
     <ClCompile Include="ERedoUndoComponent.cpp" />
     <ClCompile Include="ERedoUndoUnit.cpp" />
     <ClCompile Include="ETextComponent.cpp" />
+    <ClCompile Include="EUndoComponent.cpp" />
     <ClCompile Include="Keypad.cpp" />
     <ClCompile Include="LineNum.cpp" />
     <ClCompile Include="Login.cpp" />
@@ -215,6 +217,7 @@
     <ClInclude Include="CTable.h" />
     <ClInclude Include="DATLib.h" />
     <ClInclude Include="EConnectComponent.h" />
+    <ClInclude Include="EEditor.h" />
     <ClInclude Include="EErrorComponent.h" />
     <ClInclude Include="EFace.h" />
     <ClInclude Include="ELabelComponent.h" />
@@ -225,6 +228,7 @@
     <ClInclude Include="ERedoUndoUnit.h" />
     <ClInclude Include="ETextChangeTrigger.h" />
     <ClInclude Include="ETextComponent.h" />
+    <ClInclude Include="EUndoComponent.h" />
     <ClInclude Include="Header.h" />
     <ClInclude Include="DATerm.h" />
     <ClInclude Include="LineNum.h" />

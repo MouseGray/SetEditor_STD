@@ -584,110 +584,67 @@ std::vector<Term*> transformation::formulaExcIncX3(const Term* term)
 	auto result = std::vector<Term*>();
 	if (*term == Quantity) {
 		if (term->get_ref(0) == Union) {
-			int mask = 1;
-			int lim = (1 << (term->get_ref(0).size() << 1)) - 1;
-			for (; mask < lim; mask++) {
-				auto f_count = 0;
-				for (auto i = 0; i < term->get_ref(0).size(); i++)
-					if (mask >> (i << 1) & 3 == 0) {
-						f_count++;
-						break;
-					}
-				if (f_count == 0) continue;
-				auto s_count = 0;
-				for (auto i = 0; i < term->get_ref(0).size(); i++)
-					if (mask >> (i << 1) & 3 == 1) {
-						s_count++;
-						break;
-					}
-				if (s_count == 0) continue;
-				auto t_count = 0;
-				for (auto i = 0; i < term->get_ref(0).size(); i++)
-					if (mask >> (i << 1) & 3 == 2) {
-						t_count++;
-						break;
-					}
-				if (t_count == 0) continue;
-				auto is = true;
-				for (auto i = 0; i < term->get_ref(0).size(); i++)
-					if (mask >> (i << 1) & 3 == 3) {
-						is = false;
-						break;
-					}
-				if (!is) continue;
+			auto generator = CombinationGenerator<3>();
+			generator.start(term->get(0)->size());
 
+			while (generator.nextInBaskets()) {
 				Term *first = nullptr, *second = nullptr, *third = nullptr;
-				if (f_count == 1) {
-					for (auto i = 0; i < term->get_ref(0).size(); i++)
-						if (mask >> (i << 1) & 3 == 0)
-							first = TermTool::copy(term->get_ref(0)[i]);
-				}
+				
+				if (generator.basket(0).size() == 1)
+					first = TermTool::copy(term->get_ref(0)[0]);
 				else {
 					first = new Term(Union);
-					for (auto i = 0; i < term->get_ref(0).size(); i++)
-						if (mask >> (i << 1) & 3 == 0)
-							*first << TermTool::copy(term->get_ref(0)[i]);
+					for (auto a : generator.basket(0))
+							*first << TermTool::copy(term->get_ref(0)[a]);
 				}
 
-				if (s_count == 1) {
-					for (auto i = 0; i < term->get_ref(0).size(); i++)
-						if (mask >> (i << 1) & 3 == 1)
-							second = TermTool::copy(term->get_ref(0)[i]);
-				}
+				if (generator.basket(1).size() == 1)
+					first = TermTool::copy(term->get_ref(0)[0]);
 				else {
-					second = new Term(Union);
-					for (auto i = 0; i < term->get_ref(0).size(); i++)
-						if (mask >> (i << 1) & 3 == 1)
-							*second << TermTool::copy(term->get_ref(0)[i]);
+					first = new Term(Union);
+					for (auto a : generator.basket(1))
+						*first << TermTool::copy(term->get_ref(0)[a]);
 				}
 
-				if (t_count == 1) {
-					for (auto i = 0; i < term->get_ref(0).size(); i++)
-						if (mask >> (i << 1) & 3 == 2)
-							third = TermTool::copy(term->get_ref(0)[i]);
-				}
+				if (generator.basket(2).size() == 1)
+					first = TermTool::copy(term->get_ref(0)[0]);
 				else {
-					third = new Term(Union);
-					for (auto i = 0; i < term->get_ref(0).size(); i++)
-						if (mask >> (i << 1) & 3 == 2)
-							*third << TermTool::copy(term->get_ref(0)[i]);
+					first = new Term(Union);
+					for (auto a : generator.basket(2))
+						*first << TermTool::copy(term->get_ref(0)[a]);
 				}
 
-				auto res = new Term(Addition);
-				auto _first = new Term(Quantity);
-				*_first << TermTool::copy(first);
-				auto _second = new Term(Quantity);
-				*_second << TermTool::copy(second);
-				auto _third = new Term(Quantity);
-				*_third << TermTool::copy(third);
-
-				auto _fourth = new Term(Multiplication);
-				auto __fourth = new Term(Quantity);
-				auto ___fourth = new Term(Intersection);
-				*___fourth << TermTool::copy(first) << TermTool::copy(second);
-				*__fourth << ___fourth;
-				*_fourth << new Term(-1.0f) << __fourth;
-
-				auto _fifth = new Term(Multiplication);
-				auto __fifth = new Term(Quantity);
-				auto ___fifth = new Term(Intersection);
-				*___fifth << TermTool::copy(first) << TermTool::copy(third);
-				*__fifth << ___fifth;
-				*_fifth << new Term(-1.0f) << __fifth;
-
-				auto _sixth = new Term(Multiplication);
-				auto __sixth = new Term(Quantity);
-				auto ___sixth = new Term(Intersection);
-				*___sixth << TermTool::copy(second) << TermTool::copy(third);
-				*__sixth << ___sixth;
-				*_sixth << new Term(-1.0f) << __sixth;
-
-				auto _seventh = new Term(Quantity);
-				auto __seventh = new Term(Intersection);
-				*__seventh << TermTool::copy(first) << TermTool::copy(second) << TermTool::copy(third);
-				*_seventh << __seventh;
-
-				*res << _first << _second << _third << _fourth << _fifth << _sixth << _seventh;
+				auto res = 
+					(new Term(Addition))->push(
+						(new Term(Quantity))->push(
+							TermTool::copy(first)),
+						(new Term(Quantity))->push(
+							TermTool::copy(second)),
+						(new Term(Quantity))->push(
+							TermTool::copy(third)),
+						(new Term(Multiplication))->push(
+							(new Term(-1.0f)),
+							(new Term(Quantity))->push(
+								(new Term(Intersection))->push(
+									TermTool::copy(first),
+									TermTool::copy(second)))),
+						(new Term(Multiplication))->push(
+							(new Term(-1.0f)),
+							(new Term(Quantity))->push(
+								(new Term(Intersection))->push(
+									TermTool::copy(first),
+									TermTool::copy(third)))),
+						(new Term(Multiplication))->push(
+							(new Term(-1.0f)),
+							(new Term(Quantity))->push(
+								(new Term(Intersection))->push(
+									TermTool::copy(second),
+									TermTool::copy(third)))),
+						(new Term(Quantity))->push(
+							(new Term(Intersection))->push(
+								TermTool::copy(first),
+								TermTool::copy(second),
+								TermTool::copy(third))));
 
 				result.push_back(res);
 			}

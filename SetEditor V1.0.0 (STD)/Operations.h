@@ -1,6 +1,8 @@
 #pragma once
 #include <functional>
 #include <ranges>
+
+#include "CombinationGenerator.h"
 #include "DATLib.h"
 
 #define ERR_T_NO_ERROR 0x0000

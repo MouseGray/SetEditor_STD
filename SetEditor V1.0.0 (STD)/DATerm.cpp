@@ -159,6 +159,30 @@ Term* Term::operator[](const int pos) const
 	return m_subTerms[pos];
 }
 
+Term* Term::push(Term* term)
+{
+	m_subTerms.push_back(term);
+	return this;
+}
+
+Term* Term::push(const char value)
+{
+	m_subTerms.push_back(new Term(value));
+	return this;
+}
+
+Term* Term::push(const float value)
+{
+	m_subTerms.push_back(new Term(value));
+	return this;
+}
+
+Term* Term::push(const action value)
+{
+	m_subTerms.push_back(new Term(value));
+	return this;
+}
+
 Term* Term::get(const int pos) const
 {
 	return m_subTerms[pos];

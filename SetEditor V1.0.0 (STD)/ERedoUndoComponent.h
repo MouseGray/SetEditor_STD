@@ -29,6 +29,7 @@ public:
 
 	void clearRedo(ERedoUndoComponent::Type ruType);
 private:
+
 	std::list<std::stack<ERedoUndoUnit*>> undo;
 	std::list<std::stack<ERedoUndoUnit*>> redo;
 };

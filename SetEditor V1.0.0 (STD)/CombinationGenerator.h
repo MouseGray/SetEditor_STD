@@ -1,31 +1,58 @@
 #pragma once
 
-#include <array>
+#include <vector>
+#include <algorithm>
 #include <numeric>
 
-template<int C>
+template<int C, typename T = char>
 class CombinationGenerator
 {
-	std::array<int, C> data_;
-	size_t n_ = 0;
+	std::vector<T> data_;
+	std::vector<std::vector<T>> baskets_;
 
+public:
 	void start(size_t n) {
-		n_ = n;
-		std::iota(data_.begin(), data_.end(), 0);
+		data_.resize(n, 0);
+		baskets_.resize(C, std::vector<T>());
 	}
 
-	bool next()
+	bool nextInBaskets() {
+		if (!next()) return false;
+		for (auto b : baskets_) b.clear();
+		for (auto i = 0; i < data_.size(); i++)
+			baskets_[data_[i]].push_back(i);
+	}
+
+	const std::vector<T>& basket(int i) const {
+		return baskets_[i];
+	}
+
+	bool next() {
+		if (!next_()) return false;
+		for (auto i = 0; i < C; i++)
+			while (!isCorrectly_())
+				if (!next_()) return false;
+		return true;
+	}
+
+	const std::vector<T>& data() const {
+		return data_;
+	}
+private:
+	bool isCorrectly_() {
+		for (auto i = 0; i < C; i++) 
+			if (std::find(data_.begin(), data_.end(), i) == data_.end()) 
+				return false; 
+		return true;
+	}
+
+	bool next_()
 	{
-		auto amount = data_.size();
-		for (auto i = amount - 1; i >= 0; --i)
-			if (data_[i] < n_ - amount + i + 1) {
-				data_[i]++;
-				for (auto j = i + 1; j < amount; j++)
-					data_[j] = data_[j - 1] + 1;
-				return true;
-			}
-		return false;
+		auto it = std::find_if(data_.rbegin(), data_.rend(), [lim = C - 1](auto& e) { return e < lim; });
+		if (it == data_.rend()) return false;
+		(*it)++;
+		std::fill(data_.rbegin(), it, 0);
+		return true;
 	}
-
 };
 

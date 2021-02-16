@@ -58,6 +58,21 @@ public:
 
 	Term* operator[](const int pos) const;
 
+
+	Term* push(Term* term);
+
+	Term* push(const char value);
+	Term* push(const float value);
+	Term* push(const action value);
+
+	template <typename F, typename ...Args>
+	Term* push(F f, Args... terms) {
+		push(f);
+		push(terms...);
+
+		return this;
+	}
+
 	Term* get(const int pos) const;
 
 	Term& get_ref(const int pos) const;
